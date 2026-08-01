@@ -6,10 +6,16 @@
 2. Sidecar `.lrc`
 3. Sidecar `.txt`
 4. Locally saved lyrics in SQLite
-5. LRCLIB
+5. LRCLIB (manual fetch / search)
 6. Additional approved providers
-7. Manual paste
-8. Optional local AI draft
+7. Manual paste / editor
+8. Optional local AI draft (later)
+
+## Resolve behavior (Phase 5)
+
+`lyrics_resolve` loads **local** sources only (cache → embedded → sidecars) and caches the result for library tracks.
+
+LRCLIB is never called automatically. Users opt in via Settings → Privacy (`allowNetwork` **and** `allowLyricsProviders`), then use **Fetch LRCLIB** or **Search LRCLIB** in the inspector.
 
 ## Provider interface
 
@@ -35,6 +41,8 @@ interface LyricsProvider {
 - AI drafts are labeled, editable, and never auto-finalized
 - Network providers are disabled when privacy settings disallow network access
 
-## Phase 1
+## Offsets
 
-Interface types and documentation only. No network lyrics calls.
+- Per-track `offset_ms` stored on the `lyrics` row
+- Global `settings.lyrics.globalOffsetMs`
+- Active line uses `positionMs + globalOffset + trackOffset`

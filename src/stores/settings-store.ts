@@ -13,8 +13,21 @@ type SettingsState = {
   patchAppearance: (
     patch: Partial<AppSettings["appearance"]>,
   ) => Promise<void>;
+  patchLyrics: (patch: Partial<AppSettings["lyrics"]>) => Promise<void>;
+  patchPrivacy: (patch: Partial<AppSettings["privacy"]>) => Promise<void>;
   hydrate: (settings: AppSettings) => void;
 };
+
+async function persistPatch(
+  set: (partial: Partial<SettingsState>) => void,
+  next: AppSettings,
+) {
+  const validated = validateSettings(next);
+  set({ settings: validated });
+  if (isTauriRuntime()) {
+    await persistSettings(validated);
+  }
+}
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaultSettings,
@@ -26,16 +39,30 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ settings: validateSettings(settings) });
   },
   patchAppearance: async (patch) => {
-    const next = validateSettings({
+    await persistPatch(set, {
       ...get().settings,
       appearance: {
         ...get().settings.appearance,
         ...patch,
       },
     });
-    set({ settings: next });
-    if (isTauriRuntime()) {
-      await persistSettings(next);
-    }
+  },
+  patchLyrics: async (patch) => {
+    await persistPatch(set, {
+      ...get().settings,
+      lyrics: {
+        ...get().settings.lyrics,
+        ...patch,
+      },
+    });
+  },
+  patchPrivacy: async (patch) => {
+    await persistPatch(set, {
+      ...get().settings,
+      privacy: {
+        ...get().settings.privacy,
+        ...patch,
+      },
+    });
   },
 }));

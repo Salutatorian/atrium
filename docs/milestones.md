@@ -56,9 +56,9 @@
 
 ## Phase 5 — Lyrics
 
-- [ ] Embedded / LRC / TXT / LRCLIB
-- [ ] Synced display + editor
-- [ ] Offsets + caching + attribution
+- [x] Embedded / LRC / TXT / LRCLIB (privacy-gated)
+- [x] Synced display + editor
+- [x] Offsets + caching + attribution
 
 ## Phase 6 — Advanced
 

@@ -4,14 +4,17 @@ import type { AppSettings } from "./schema";
 export function SettingsPanel() {
   const settings = useSettingsStore((s) => s.settings);
   const patchAppearance = useSettingsStore((s) => s.patchAppearance);
+  const patchLyrics = useSettingsStore((s) => s.patchLyrics);
+  const patchPrivacy = useSettingsStore((s) => s.patchPrivacy);
 
   return (
     <section className="panel settings-panel" aria-label="Settings">
       <p className="panel__intro">
-        Shape the listening room — density, chrome, and how the player bar
-        sits in the space.
+        Shape the listening room — density, chrome, lyrics display, and privacy
+        gates for network providers.
       </p>
       <div className="settings-stack">
+        <h2 className="settings-section-title">Appearance</h2>
         <label className="settings-field">
           <span>Density</span>
           <select
@@ -92,9 +95,85 @@ export function SettingsPanel() {
           </select>
         </label>
 
+        <h2 className="settings-section-title">Lyrics</h2>
+        <label className="settings-field settings-field--checkbox">
+          <span>Prefer synchronized lyrics</span>
+          <input
+            type="checkbox"
+            checked={settings.lyrics.preferSynchronized}
+            onChange={(event) => {
+              void patchLyrics({ preferSynchronized: event.target.checked });
+            }}
+          />
+        </label>
+        <label className="settings-field">
+          <span>Lyrics font size ({settings.lyrics.fontSize}px)</span>
+          <input
+            type="range"
+            min={12}
+            max={40}
+            step={1}
+            value={settings.lyrics.fontSize}
+            onChange={(event) => {
+              void patchLyrics({ fontSize: Number(event.target.value) });
+            }}
+          />
+        </label>
+        <label className="settings-field">
+          <span>Alignment</span>
+          <select
+            value={settings.lyrics.alignment}
+            onChange={(event) => {
+              void patchLyrics({
+                alignment: event.target
+                  .value as AppSettings["lyrics"]["alignment"],
+              });
+            }}
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </label>
+        <label className="settings-field">
+          <span>Global offset ({settings.lyrics.globalOffsetMs}ms)</span>
+          <input
+            type="range"
+            min={-5000}
+            max={5000}
+            step={50}
+            value={settings.lyrics.globalOffsetMs}
+            onChange={(event) => {
+              void patchLyrics({ globalOffsetMs: Number(event.target.value) });
+            }}
+          />
+        </label>
+
+        <h2 className="settings-section-title">Privacy</h2>
+        <label className="settings-field settings-field--checkbox">
+          <span>Allow network access</span>
+          <input
+            type="checkbox"
+            checked={settings.privacy.allowNetwork}
+            onChange={(event) => {
+              void patchPrivacy({ allowNetwork: event.target.checked });
+            }}
+          />
+        </label>
+        <label className="settings-field settings-field--checkbox">
+          <span>Allow lyrics providers (LRCLIB)</span>
+          <input
+            type="checkbox"
+            checked={settings.privacy.allowLyricsProviders}
+            onChange={(event) => {
+              void patchPrivacy({ allowLyricsProviders: event.target.checked });
+            }}
+          />
+        </label>
+
         <p className="settings-note">
-          Privacy defaults: network, analytics, and crash reports are off.
-          Themes live under Theme studio.
+          Network lyrics stay off until both privacy toggles are enabled.
+          Attribution is always shown for remote sources.
         </p>
       </div>
     </section>

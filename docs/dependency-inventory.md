@@ -50,6 +50,7 @@ Verify versions at install time. Licenses summarized from package metadata; re-c
 | symphonia | Decode | MPL-2.0 |
 | cpal | Audio output | Apache-2.0 OR MIT |
 | rand | Shuffle order | MIT / Apache-2.0 |
+| ureq | LRCLIB HTTP client | Apache-2.0 OR MIT |
 
 ## Planned (not yet added)
 

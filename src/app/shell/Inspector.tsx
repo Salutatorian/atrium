@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { LyricsPanel } from "../../features/lyrics/LyricsPanel";
 import { QueuePanel } from "../../features/player/QueuePanel";
 import {
   useShellStore,
@@ -103,13 +104,14 @@ export function Inspector() {
       <div className="inspector__body" role="tabpanel">
         {tab === "queue" ? (
           <QueuePanel />
+        ) : tab === "lyrics" ? (
+          <LyricsPanel />
         ) : tab === "track" ? (
           <TrackDetailsPanel />
         ) : (
           <p className="inspector__empty">
-            {tab === "lyrics"
-              ? "Lyrics panel ready. Sources arrive in Phase 5."
-              : "No selection yet. Import a library and play a track to inspect details."}
+            No selection yet. Import a library and play a track to inspect
+            details.
           </p>
         )}
       </div>

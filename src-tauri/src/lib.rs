@@ -79,6 +79,11 @@ pub fn run() {
             commands::player_remove_from_queue,
             commands::player_clear_queue,
             commands::player_get_queue,
+            commands::lyrics_resolve,
+            commands::lyrics_save,
+            commands::lyrics_set_offset,
+            commands::lyrics_search_lrclib,
+            commands::lyrics_fetch_lrclib,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Atrium");

@@ -7,7 +7,7 @@ Atrium is a private listening room for your local music library — not a stream
 
 ## Current status
 
-**Phase 0–4** are implemented.
+**Phase 0–5** are implemented.
 
 Highlights:
 
@@ -16,8 +16,9 @@ Highlights:
 - Symphonia + cpal playback with queue and transport
 - Theme studio: presets, atmosphere controls, import/export
 - Immersive and mini player modes, density + player bar styles
+- Lyrics: embedded / sidecar LRC+TXT, synced display, editor, LRCLIB (opt-in)
 
-Lyrics and advanced DSP remain for later phases.
+Advanced DSP and smart playlists remain for Phase 6.
 
 ## Development
 
