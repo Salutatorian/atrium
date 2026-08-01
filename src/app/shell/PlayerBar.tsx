@@ -65,8 +65,11 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
   const playing = status === "playing";
   const hasTrack = Boolean(current);
   const canFavorite = Boolean(current && current.trackId > 0);
+  const scrubMax = Math.max(durationMs, positionMs, 1);
   const progress =
-    durationMs > 0 ? Math.min(100, (positionMs / durationMs) * 100) : 0;
+    durationMs > 0
+      ? Math.min(100, (positionMs / durationMs) * 100)
+      : Math.min(100, (positionMs / scrubMax) * 100);
 
   useEffect(() => {
     const trackId = current?.trackId;
@@ -221,10 +224,10 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
           <input
             type="range"
             min={0}
-            max={Math.max(durationMs, 1)}
+            max={scrubMax}
             step={250}
-            value={Math.min(positionMs, durationMs || 0)}
-            disabled={!hasTrack || durationMs <= 0}
+            value={Math.min(positionMs, scrubMax)}
+            disabled={!hasTrack}
             aria-label="Seek"
             style={{ ["--scrub-progress" as string]: `${progress}%` }}
             onChange={(event) => {
@@ -234,7 +237,7 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
           />
         </label>
         <span>
-          {durationMs > 0 ? formatPlaybackTime(durationMs) : "—:——"}
+          {durationMs > 0 ? formatPlaybackTime(durationMs) : "…"}
         </span>
       </div>
 
@@ -371,7 +374,8 @@ function TransportGlyph({
     case "prev":
       return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M6 6h2v12H6V6Zm3.5 6 10-6v12l-10-6Z" />
+          <rect x="4" y="5" width="2.5" height="14" rx="0.5" />
+          <path d="M19.5 6.2v11.6L8.2 12 19.5 6.2Z" />
         </svg>
       );
     case "play":
@@ -389,7 +393,8 @@ function TransportGlyph({
     case "next":
       return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M16 6h2v12h-2V6ZM4.5 12l10-6v12l-10-6Z" />
+          <path d="M4.5 6.2v11.6L15.8 12 4.5 6.2Z" />
+          <rect x="17.5" y="5" width="2.5" height="14" rx="0.5" />
         </svg>
       );
     case "repeat":

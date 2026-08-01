@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { builtinThemes } from "./catalog";
 import { duskTheme, mistTheme } from "./presets";
 import {
   safeParseThemeDocument,
@@ -10,6 +11,13 @@ describe("theme schema", () => {
   it("validates built-in mist and dusk themes", () => {
     expect(validateThemeDocument(mistTheme).id).toBe("atrium-mist");
     expect(validateThemeDocument(duskTheme).id).toBe("atrium-dusk");
+  });
+
+  it("validates the full Atrium catalog", () => {
+    expect(builtinThemes.length).toBeGreaterThan(10);
+    for (const theme of builtinThemes) {
+      expect(validateThemeDocument(theme).id).toBe(theme.id);
+    }
   });
 
   it("rejects themes with the wrong kind", () => {
@@ -34,9 +42,12 @@ describe("theme schema", () => {
     const vars = themeToCssVariables(mistTheme);
     expect(vars["--color-accent"]).toBe(mistTheme.colors.accent);
     expect(vars["--font-heading"]).toContain("Fraunces");
-    expect(vars["--sidebar-width"]).toBe(`${mistTheme.appearance.sidebarWidth}px`);
-    expect(vars["--bg-overlay"]).toBe(String(mistTheme.background.overlayOpacity));
+    expect(vars["--sidebar-width"]).toBe(
+      `${mistTheme.appearance.sidebarWidth}px`,
+    );
+    expect(vars["--bg-overlay"]).toBe(
+      String(mistTheme.background.overlayOpacity),
+    );
     expect(vars["--bg-blur"]).toBe(`${mistTheme.background.blur}px`);
   });
 });
-

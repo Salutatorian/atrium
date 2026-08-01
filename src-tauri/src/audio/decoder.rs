@@ -60,9 +60,7 @@ impl SymphoniaDecoder {
             .map(|c| c.count())
             .unwrap_or(2)
             .max(1);
-        // Symphonia 0.6 no longer exposes total frame count on codec params.
-        // Prefer library metadata duration; decoder reports 0 when unknown.
-        let duration_ms = 0u64;
+        let duration_ms = lofty_duration_ms(path);
 
         let decoder = get_codecs()
             .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
@@ -234,6 +232,18 @@ fn resample_linear(input: &[f32], in_rate: u32, out_rate: u32) -> Vec<f32> {
         out.push(a + (b - a) * frac);
     }
     out
+}
+
+fn lofty_duration_ms(path: &Path) -> u64 {
+    use lofty::file::AudioFile;
+    use lofty::probe::Probe;
+
+    Probe::open(path)
+        .ok()
+        .and_then(|probe| probe.read().ok())
+        .map(|tagged| tagged.properties().duration().as_millis() as u64)
+        .filter(|ms| *ms > 0)
+        .unwrap_or(0)
 }
 
 #[cfg(test)]

@@ -5,7 +5,7 @@ import { isTauriRuntime } from "../../services/tauri";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useThemeStore } from "../../stores/theme-store";
 import { cn } from "../../utils/cn";
-import { builtinThemes } from "./presets";
+import { builtinThemes } from "./catalog";
 import { exportThemeDownload, parseThemeFileText } from "./io";
 import type { ThemeDocument } from "./schema";
 
@@ -31,8 +31,18 @@ export function ThemesStudio() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
-  const catalog = [...builtinThemes, ...customThemes];
+  const catalog = [...builtinThemes, ...customThemes].filter((item) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      item.name.toLowerCase().includes(q) ||
+      item.id.toLowerCase().includes(q) ||
+      item.tags.some((tag) => tag.toLowerCase().includes(q)) ||
+      (item.description?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   function applyTheme(item: ThemeDocument) {
     setTheme(item);
@@ -98,11 +108,20 @@ export function ThemesStudio() {
   return (
     <section className="panel themes-panel" aria-label="Themes">
       <p className="panel__intro">
-        Browse Atrium presets, tune the room atmosphere, and import or export
-        theme files ({THEME_FILE_EXTENSION}).
+        Browse Atrium presets (original palettes — third-party GPL packs are
+        not bundled), tune atmosphere, and import or export theme files (
+        {THEME_FILE_EXTENSION}).
       </p>
 
       <div className="themes-toolbar">
+        <label className="settings-field themes-search">
+          <span className="sr-only">Search themes</span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search themes (ink, nordic, sakura…)"
+          />
+        </label>
         <button
           type="button"
           className="button-primary"

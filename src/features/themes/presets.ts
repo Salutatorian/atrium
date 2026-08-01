@@ -140,9 +140,3 @@ export const duskTheme: ThemeDocument = {
     animationStrength: 0.2,
   },
 };
-
-export const builtinThemes: ThemeDocument[] = [mistTheme, duskTheme];
-
-export function getThemeById(id: string): ThemeDocument | undefined {
-  return builtinThemes.find((theme) => theme.id === id);
-}

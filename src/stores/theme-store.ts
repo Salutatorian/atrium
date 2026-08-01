@@ -4,7 +4,7 @@ import {
   saveCustomThemes,
   upsertCustomTheme,
 } from "../features/themes/io";
-import { getThemeById, mistTheme } from "../features/themes/presets";
+import { getThemeById, mistTheme } from "../features/themes/catalog";
 import {
   themeToCssVariables,
   type ThemeDocument,
