@@ -68,5 +68,9 @@
 
 ## Phase 7 — Polish
 
-- [ ] Listening history / favorites depth
-- [ ] Packaging, updater, accessibility pass
+- [x] Listening history / favorites depth
+- [x] Packaging, updater notes, accessibility pass
+
+## Roadmap complete (v0.1)
+
+Phases 0–7 cover the documented MVP. Further work is iterative UX/quality (player polish, theme catalog licensing, deeper OS integrations).

@@ -1,6 +1,11 @@
+import { useEffect, useState } from "react";
 import { IconHeart, IconPlaylists } from "../../components/icons";
 import { Tooltip } from "../../components/Tooltip";
 import { ArtworkImage } from "../../features/library/ArtworkImage";
+import {
+  isFavorite,
+  toggleFavorite,
+} from "../../features/listening/api";
 import {
   playerNext,
   playerPrevious,
@@ -55,11 +60,27 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
   const repeat = usePlayerStore((s) => s.repeat);
   const error = usePlayerStore((s) => s.error);
   const applySnapshot = usePlayerStore((s) => s.applySnapshot);
+  const [favorited, setFavorited] = useState(false);
 
   const playing = status === "playing";
   const hasTrack = Boolean(current);
+  const canFavorite = Boolean(current && current.trackId > 0);
   const progress =
     durationMs > 0 ? Math.min(100, (positionMs / durationMs) * 100) : 0;
+
+  useEffect(() => {
+    const trackId = current?.trackId;
+    if (!trackId || trackId <= 0) {
+      return;
+    }
+    let cancelled = false;
+    void isFavorite(trackId).then((value) => {
+      if (!cancelled) setFavorited(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [current?.trackId]);
 
   return (
     <div
@@ -90,9 +111,28 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
                 (hasTrack ? "Unknown artist" : "Double-click a song to play")}
           </p>
         </div>
-        <Tooltip label="Favorite" side="top">
-          <button type="button" className="icon-button" aria-label="Favorite" disabled>
-            <IconHeart />
+        <Tooltip
+          label={
+            canFavorite
+              ? favorited
+                ? "Remove favorite"
+                : "Add favorite"
+              : "Favorite (library tracks only)"
+          }
+          side="top"
+        >
+          <button
+            type="button"
+            className={cn("icon-button", favorited && "icon-button--active")}
+            aria-label={favorited ? "Remove favorite" : "Add favorite"}
+            aria-pressed={favorited}
+            disabled={!canFavorite}
+            onClick={() => {
+              if (!current || current.trackId <= 0) return;
+              void toggleFavorite(current.trackId).then(setFavorited);
+            }}
+          >
+            <IconHeart filled={favorited} />
           </button>
         </Tooltip>
       </div>

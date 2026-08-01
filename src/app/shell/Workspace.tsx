@@ -9,6 +9,11 @@ import {
 import { LibraryToolbar } from "../../features/library/LibraryToolbar";
 import { PlaylistsPage } from "../../features/playlists/PlaylistsPage";
 import { SmartPlaylistsPage } from "../../features/playlists/SmartPlaylistsPage";
+import {
+  FavoritesPage,
+  HistoryPage,
+  RecentlyPlayedPage,
+} from "../../features/listening/ListeningPages";
 import { SettingsPanel } from "../../features/settings/SettingsPanel";
 import { ThemesStudio } from "../../features/themes/ThemesStudio";
 import { useLibraryStore } from "../../stores/library-store";
@@ -49,13 +54,11 @@ export function Workspace() {
         {activeNav === "recently-added" ? <RecentlyAddedPage /> : null}
         {activeNav === "playlists" ? <PlaylistsPage /> : null}
         {activeNav === "smart-playlists" ? <SmartPlaylistsPage /> : null}
+        {activeNav === "favorites" ? <FavoritesPage /> : null}
+        {activeNav === "recently-played" ? <RecentlyPlayedPage /> : null}
+        {activeNav === "history" ? <HistoryPage /> : null}
         {activeNav === "themes" ? <ThemesStudio /> : null}
         {activeNav === "settings" ? <SettingsPanel /> : null}
-        {activeNav === "recently-played" ||
-        activeNav === "favorites" ||
-        activeNav === "history" ? (
-          <EmptyLibraryPanel section={titles[activeNav]} />
-        ) : null}
       </div>
     </main>
   );
@@ -84,18 +87,6 @@ function HomePanel() {
         </div>
         <div className="home-panel__glow" />
       </div>
-    </section>
-  );
-}
-
-function EmptyLibraryPanel({ section }: { section: string }) {
-  return (
-    <section className="panel empty-panel" aria-label={section}>
-      <h2 className="empty-panel__title">{section}</h2>
-      <p className="empty-panel__detail">
-        This view is reserved for a later phase. Your imported library is
-        available under Songs, Albums, Artists, and Folders.
-      </p>
     </section>
   );
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 type IconProps = {
   className?: string;
   title?: string;
+  filled?: boolean;
 };
 
 export function IconHome(props: IconProps) {
@@ -84,10 +85,13 @@ export function IconRecent(props: IconProps) {
   );
 }
 
-export function IconHeart(props: IconProps) {
+export function IconHeart({ filled = false, ...props }: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M12 19s-6.5-4.2-8.5-8A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8.5 4c-2 3.8-8.5 8-8.5 8Z" />
+      <path
+        d="M12 19s-6.5-4.2-8.5-8A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8.5 4c-2 3.8-8.5 8-8.5 8Z"
+        fill={filled ? "currentColor" : "none"}
+      />
     </Svg>
   );
 }

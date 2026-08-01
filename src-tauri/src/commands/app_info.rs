@@ -20,6 +20,6 @@ pub fn get_app_info(state: State<'_, AppState>) -> Result<AppInfo, AppError> {
         app_id: APP_ID.into(),
         version: env!("CARGO_PKG_VERSION").into(),
         data_dir: state.data_dir.display().to_string(),
-        phase: "6-advanced".into(),
+        phase: "7-polish".into(),
     })
 }

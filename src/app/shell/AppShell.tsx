@@ -4,6 +4,7 @@ import { SingleFilePromptDialog } from "../../features/library/SingleFilePrompt"
 import { TaskCenter } from "../../features/library/TaskCenter";
 import { ImmersiveStage } from "../../features/shell/ImmersiveStage";
 import { Atmosphere } from "../../features/themes/Atmosphere";
+import { useListeningRecorder } from "../../features/listening/use-listening-recorder";
 import { useLibraryEvents } from "../../hooks/use-library-events";
 import { useMediaKeys } from "../../hooks/use-media-keys";
 import { usePlayerEvents } from "../../hooks/use-player-events";
@@ -27,6 +28,7 @@ export function AppShell({ appName }: AppShellProps) {
   const shellMode = useSettingsStore((s) => s.settings.appearance.shellMode);
   useLibraryEvents();
   usePlayerEvents();
+  useListeningRecorder();
   useMediaKeys();
   useSystemTheme();
   useShellModeKeys();

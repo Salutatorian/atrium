@@ -101,8 +101,8 @@ export function RecentlyAddedPage() {
     <section className="panel library-page" aria-label="Recently added">
       <LibraryToolbar />
       <p className="panel__intro">
-        Showing the current library window ordered by import. Dedicated recents
-        sorting arrives with listening history.
+        Showing recently imported tracks. Dedicated history lives under History
+        and Recently played in the nav.
       </p>
       {tracks.length === 0 ? (
         <p className="empty-panel__detail">Nothing imported yet.</p>
