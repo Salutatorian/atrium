@@ -13,6 +13,7 @@ type SettingsState = {
   patchAppearance: (
     patch: Partial<AppSettings["appearance"]>,
   ) => Promise<void>;
+  patchGeneral: (patch: Partial<AppSettings["general"]>) => Promise<void>;
   patchPlayback: (patch: Partial<AppSettings["playback"]>) => Promise<void>;
   patchLyrics: (patch: Partial<AppSettings["lyrics"]>) => Promise<void>;
   patchPrivacy: (patch: Partial<AppSettings["privacy"]>) => Promise<void>;
@@ -44,6 +45,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       ...get().settings,
       appearance: {
         ...get().settings.appearance,
+        ...patch,
+      },
+    });
+  },
+  patchGeneral: async (patch) => {
+    await persistPatch(set, {
+      ...get().settings,
+      general: {
+        ...get().settings.general,
         ...patch,
       },
     });

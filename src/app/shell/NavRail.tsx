@@ -25,14 +25,16 @@ export function NavRail() {
           onClick={() => setActiveNav("home")}
           aria-label={`${APP_NAME} home`}
         >
-          <span className="brand-mark__glyph" aria-hidden="true">
+          <span className="brand-mark__word" aria-hidden="true">
             A
           </span>
-          {expanded ? <span className="brand-mark__name">{APP_NAME}</span> : null}
+          {expanded ? (
+            <span className="brand-mark__name">{APP_NAME}</span>
+          ) : null}
         </button>
       </div>
 
-      <nav className="nav-rail__list" aria-label="Library">
+      <nav className="nav-rail__list" aria-label="Main">
         {primaryNav.map((item) => {
           const { Icon } = item;
           const button = (
@@ -55,11 +57,7 @@ export function NavRail() {
 
           return (
             <div key={item.id} className="nav-item-wrap">
-              {expanded ? (
-                button
-              ) : (
-                <Tooltip label={item.label}>{button}</Tooltip>
-              )}
+              {expanded ? button : <Tooltip label={item.label}>{button}</Tooltip>}
             </div>
           );
         })}

@@ -30,12 +30,6 @@ pub fn parse_audio_file(path: &Path) -> Result<ParsedTrack, AppError> {
     let channels = properties.channels().map(|v| v as i64);
     let codec = format!("{:?}", tagged.file_type());
 
-    let tag = tagged.primary_tag().or_else(|| tagged.first_tag());
-    let fallback_title = path
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .map(|s| s.to_string());
-
     let mut artwork_bytes = None;
     let mut artwork_mime = None;
     let mut has_lyrics = false;
@@ -43,6 +37,22 @@ pub fn parse_audio_file(path: &Path) -> Result<ParsedTrack, AppError> {
     let mut replaygain_album_gain = None;
     let mut replaygain_track_peak = None;
     let mut replaygain_album_peak = None;
+
+    // Prefer primary tag for text; collect cover art from any tag (MP4 often uses "Other").
+    if let Some(picture) = tagged
+        .tags()
+        .iter()
+        .find_map(|tag| pick_cover(tag.pictures()))
+    {
+        artwork_bytes = Some(picture.data().to_vec());
+        artwork_mime = Some(format!("{:?}", picture.mime_type()));
+    }
+
+    let tag = tagged.primary_tag().or_else(|| tagged.first_tag());
+    let fallback_title = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_string());
 
     let (
         title,
@@ -71,11 +81,6 @@ pub fn parse_audio_file(path: &Path) -> Result<ParsedTrack, AppError> {
         replaygain_album_peak = tag
             .get_string(ItemKey::ReplayGainAlbumPeak)
             .and_then(|v| v.trim().parse().ok());
-
-        if let Some(picture) = pick_cover(tag.pictures()) {
-            artwork_bytes = Some(picture.data().to_vec());
-            artwork_mime = Some(format!("{:?}", picture.mime_type()));
-        }
 
         let year = tag
             .get_string(ItemKey::Year)

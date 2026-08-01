@@ -1,8 +1,10 @@
 use crate::app::AppState;
 use crate::error::AppError;
 use crate::library::listening::{
-    clear_history, is_favorite, list_favorites, list_history, list_recently_played, record_play,
-    toggle_favorite, HistoryEntry,
+    is_favorite, list_favorites, list_history, list_recently_played, list_scrobbles,
+    list_scrobbles_for_day, list_story_years, record_play, record_scrobble, stats_overview,
+    stats_top_albums, stats_top_artists, stats_top_tracks, toggle_favorite, year_story, AlbumStat,
+    ArtistStat, HistoryEntry, ScrobbleEntry, ScrobbleInput, StatsOverview, TrackStat, YearStory,
 };
 use crate::library::models::TrackSummary;
 use serde::Serialize;
@@ -58,12 +60,6 @@ pub fn history_recently_played(
 }
 
 #[tauri::command]
-pub fn history_clear(state: State<'_, AppState>) -> Result<(), AppError> {
-    let db = state.db.lock();
-    clear_history(&db)
-}
-
-#[tauri::command]
 pub fn history_record_play(
     state: State<'_, AppState>,
     track_id: i64,
@@ -77,4 +73,97 @@ pub fn history_record_play(
         duration_listened_ms,
         completed.unwrap_or(false),
     )
+}
+
+#[tauri::command]
+pub fn stats_record_scrobble(
+    state: State<'_, AppState>,
+    scrobble: ScrobbleInput,
+) -> Result<(), AppError> {
+    let db = state.db.lock();
+    record_scrobble(&db, scrobble)
+}
+
+#[tauri::command]
+pub fn stats_get_overview(
+    state: State<'_, AppState>,
+    range: Option<String>,
+) -> Result<StatsOverview, AppError> {
+    let db = state.db.lock();
+    stats_overview(&db, range.as_deref().unwrap_or("all"))
+}
+
+#[tauri::command]
+pub fn stats_get_top_tracks(
+    state: State<'_, AppState>,
+    range: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<TrackStat>, AppError> {
+    let db = state.db.lock();
+    stats_top_tracks(
+        &db,
+        range.as_deref().unwrap_or("all"),
+        limit.unwrap_or(25),
+    )
+}
+
+#[tauri::command]
+pub fn stats_get_top_artists(
+    state: State<'_, AppState>,
+    range: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<ArtistStat>, AppError> {
+    let db = state.db.lock();
+    stats_top_artists(
+        &db,
+        range.as_deref().unwrap_or("all"),
+        limit.unwrap_or(25),
+    )
+}
+
+#[tauri::command]
+pub fn stats_get_top_albums(
+    state: State<'_, AppState>,
+    range: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<AlbumStat>, AppError> {
+    let db = state.db.lock();
+    stats_top_albums(
+        &db,
+        range.as_deref().unwrap_or("all"),
+        limit.unwrap_or(25),
+    )
+}
+
+#[tauri::command]
+pub fn stats_list_scrobbles(
+    state: State<'_, AppState>,
+    limit: Option<i64>,
+) -> Result<Vec<ScrobbleEntry>, AppError> {
+    let db = state.db.lock();
+    list_scrobbles(&db, limit.unwrap_or(100))
+}
+
+#[tauri::command]
+pub fn stats_list_day_scrobbles(
+    state: State<'_, AppState>,
+    day: String,
+) -> Result<Vec<ScrobbleEntry>, AppError> {
+    let db = state.db.lock();
+    list_scrobbles_for_day(&db, &day)
+}
+
+#[tauri::command]
+pub fn stats_list_story_years(state: State<'_, AppState>) -> Result<Vec<i32>, AppError> {
+    let db = state.db.lock();
+    list_story_years(&db)
+}
+
+#[tauri::command]
+pub fn stats_get_year_story(
+    state: State<'_, AppState>,
+    year: i32,
+) -> Result<YearStory, AppError> {
+    let db = state.db.lock();
+    year_story(&db, year)
 }

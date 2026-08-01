@@ -34,6 +34,7 @@ type LibraryState = {
   setSingleFilePrompt: (prompt: SingleFilePrompt | null) => void;
   setSearchQuery: (query: string) => void;
   upsertScanEvent: (event: ScanProgressEvent) => void;
+  dismissScanEvent: (jobId: string) => void;
   refreshStats: () => Promise<void>;
   loadTracks: (reset?: boolean) => Promise<void>;
   loadMoreTracks: () => Promise<void>;
@@ -74,6 +75,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         [event.jobId]: event,
       },
     })),
+  dismissScanEvent: (jobId) =>
+    set((state) => {
+      const next = { ...state.scanEvents };
+      delete next[jobId];
+      return { scanEvents: next };
+    }),
   refreshStats: async () => {
     const stats = await fetchLibraryStats();
     set({ stats });

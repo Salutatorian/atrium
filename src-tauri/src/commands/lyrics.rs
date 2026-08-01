@@ -92,14 +92,16 @@ pub fn lyrics_fetch_lrclib(
 
     let mut payload = if let Some(id) = result_id {
         let doc = lrclib::fetch(&id)?;
-        LyricsPayload::with_content(
+        let mut payload = LyricsPayload::with_content(
             track_id.filter(|id| *id > 0),
             doc.plain_text,
             doc.synced_lrc,
             "lrclib",
             "lrclib",
             "LRCLIB (lrclib.net)",
-        )
+        );
+        payload.source_url = Some(format!("https://lrclib.net/api/get/{id}"));
+        payload
     } else {
         lrclib::fetch_best_match(&query)?.ok_or_else(|| {
             AppError::Message("No LRCLIB match found".into())

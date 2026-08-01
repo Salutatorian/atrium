@@ -17,6 +17,8 @@ pub struct TrackSummary {
     pub has_artwork: bool,
     pub artwork_cache_key: Option<String>,
     pub date_added: Option<String>,
+    #[serde(default)]
+    pub missing: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,6 +46,15 @@ pub struct FolderSummary {
     pub id: i64,
     pub path: String,
     pub name: String,
+    pub track_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LibraryRootSummary {
+    pub id: i64,
+    pub path: String,
+    pub label: String,
     pub track_count: i64,
 }
 

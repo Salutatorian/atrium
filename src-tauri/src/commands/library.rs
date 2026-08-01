@@ -1,12 +1,13 @@
 use crate::app::AppState;
 use crate::error::AppError;
 use crate::library::models::{
-    AlbumSummary, ArtistSummary, DropClassification, FolderSummary, LibraryStats, Page,
-    ScanJobSummary, TrackSummary,
+    AlbumSummary, ArtistSummary, DropClassification, FolderSummary, LibraryRootSummary,
+    LibraryStats, Page, ScanJobSummary, TrackSummary,
 };
 use crate::library::repository::{
-    get_track_by_id, library_stats, list_albums, list_artists, list_folders, list_scan_jobs,
-    list_tracks, resolve_artwork_file, update_track_tags,
+    get_track_by_id, library_stats, list_albums, list_artists, list_folders,
+    list_library_root_summaries, list_scan_jobs, list_top_level_library_roots, list_tracks,
+    remove_library_root, resolve_artwork_file, update_track_tags,
 };
 use crate::library::scanner::classify_drop_paths;
 use serde::Serialize;
@@ -93,6 +94,26 @@ pub fn list_library_folders(state: State<'_, AppState>) -> Result<Vec<FolderSumm
     list_folders(&db)
 }
 
+#[tauri::command]
+pub fn list_library_roots(
+    state: State<'_, AppState>,
+) -> Result<Vec<LibraryRootSummary>, AppError> {
+    let db = state.db.lock();
+    list_library_root_summaries(&db)
+}
+
+#[tauri::command]
+pub fn remove_library_folder(
+    state: State<'_, AppState>,
+    root_id: i64,
+) -> Result<(), AppError> {
+    if root_id <= 0 {
+        return Err(AppError::Message("Invalid library folder".into()));
+    }
+    let db = state.db.lock();
+    remove_library_root(&db, root_id)
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ArtworkPathResponse {
@@ -164,21 +185,12 @@ pub fn update_library_track_tags(
 pub fn rescan_library(app: AppHandle, state: State<'_, AppState>) -> Result<String, AppError> {
     let roots = {
         let db = state.db.lock();
-        let mut stmt = db
-            .conn()
-            .prepare("SELECT path FROM library_roots WHERE enabled = 1")
-            .map_err(AppError::from)?;
-        let paths = stmt
-            .query_map([], |row| row.get::<_, String>(0))
-            .map_err(AppError::from)?
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::from)?;
-        paths
+        list_top_level_library_roots(&db)?
     };
 
     if roots.is_empty() {
         return Err(AppError::Message(
-            "No library folders yet. Drop music or choose a folder to import.".into(),
+            "No library folders yet. Drop music or choose a folder to add.".into(),
         ));
     }
 

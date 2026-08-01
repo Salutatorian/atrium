@@ -314,17 +314,21 @@ fn run_player_worker(
                             true,
                         )?;
                     } else {
+                        buffer.paused.store(false, Ordering::Relaxed);
                         playing = true;
                         *state.status.lock() = PlayerStatus::Playing;
                     }
                 }
                 PlayerCommand::Pause => {
+                    // Gate output immediately — don't drain ~1s of soft buffer.
+                    buffer.paused.store(true, Ordering::Relaxed);
                     playing = false;
                     *state.status.lock() = PlayerStatus::Paused;
                 }
                 PlayerCommand::Stop => {
                     playing = false;
                     decoder = None;
+                    buffer.paused.store(false, Ordering::Relaxed);
                     buffer.clear();
                     *state.status.lock() = PlayerStatus::Stopped;
                     state.position_ms.store(0, Ordering::Relaxed);
@@ -379,6 +383,8 @@ fn run_player_worker(
                     if let Some(active) = decoder.as_mut() {
                         active.seek_ms(position_ms)?;
                         buffer.clear();
+                        // Keep pause gate consistent with play state.
+                        buffer.paused.store(!playing, Ordering::Relaxed);
                         decode_origin_ms = position_ms;
                         decoded_frames = 0;
                         state.position_ms.store(position_ms, Ordering::Relaxed);
@@ -411,7 +417,7 @@ fn run_player_worker(
                     PLAYER_ERROR,
                     "Audio device unavailable".to_string(),
                 );
-            } else if buffer.len() < out_rate as usize * out_channels {
+            } else if buffer.len() < (out_rate as usize * out_channels * 80) / 1000 {
                 match decoder.as_mut() {
                     Some(active) => match active.decode_next() {
                         Ok(Some(chunk)) => {
@@ -559,6 +565,7 @@ fn load_current(
             apply_track_gain(buffer, state, &track);
             *state.current.lock() = Some(track);
             *state.status.lock() = PlayerStatus::Playing;
+            buffer.paused.store(false, Ordering::Relaxed);
             *decoder = Some(active);
             emit_track_changed(app, state);
             Ok(true)

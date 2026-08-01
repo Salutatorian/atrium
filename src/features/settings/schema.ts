@@ -5,6 +5,10 @@ export const appSettingsSchema = z.object({
   general: z.object({
     launchBehavior: z.string(),
     startMinimized: z.boolean(),
+    /** Hide to the system tray (notification area) when pressing X. Default on. */
+    closeToTray: z.boolean().default(true),
+    /** Start Atrium when signing in to Windows / macOS / Linux. Default off. */
+    launchAtLogin: z.boolean().default(false),
     restoreLastPage: z.boolean(),
     restoreQueue: z.boolean(),
     language: z.string(),
@@ -62,6 +66,8 @@ export const defaultSettings: AppSettings = {
   general: {
     launchBehavior: "normal",
     startMinimized: false,
+    closeToTray: true,
+    launchAtLogin: false,
     restoreLastPage: true,
     restoreQueue: true,
     language: "system",

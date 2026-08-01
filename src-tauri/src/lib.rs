@@ -10,17 +10,26 @@ mod lyrics;
 mod platform;
 mod security;
 mod settings;
+mod tray;
+
+use std::sync::atomic::Ordering;
 
 use app::{AppState, APP_NAME, DATABASE_FILE_NAME};
 use audio::PlayerEngine;
 use library::artwork::ensure_artwork_dirs;
-use tauri::Manager;
+use tauri::{Manager, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // LaunchAgent is the default on macOS; keep builder OS-agnostic (no macos-only APIs on Windows/Linux).
+    let autostart = tauri_plugin_autostart::Builder::new()
+        .app_name(APP_NAME)
+        .build();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(autostart)
         .setup(|app| {
             let data_dir = app
                 .path()
@@ -37,13 +46,39 @@ pub fn run() {
             let player = PlayerEngine::start(app.handle().clone(), initial_volume)?;
             player.apply_playback_settings(&app_settings.playback);
 
+            // Keep login item in sync with saved preference (all desktop OS).
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                let autolaunch = app.autolaunch();
+                if app_settings.general.launch_at_login {
+                    let _ = autolaunch.enable();
+                } else {
+                    let _ = autolaunch.disable();
+                }
+            }
+
             app.manage(AppState::new(data_dir, db, app_settings, player));
 
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.set_title(APP_NAME);
             }
 
+            tray::setup_tray(app.handle())?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                let allow_exit = window
+                    .try_state::<AppState>()
+                    .map(|s| s.allow_exit.load(Ordering::SeqCst))
+                    .unwrap_or(false);
+                let close_to_tray = tray::close_to_tray_enabled(window.app_handle());
+                if !allow_exit && close_to_tray {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_app_info,
@@ -60,6 +95,8 @@ pub fn run() {
             commands::list_library_albums,
             commands::list_library_artists,
             commands::list_library_folders,
+            commands::list_library_roots,
+            commands::remove_library_folder,
             commands::get_artwork_path,
             commands::rescan_library,
             commands::get_library_track,
@@ -81,8 +118,16 @@ pub fn run() {
             commands::favorites_toggle,
             commands::history_list,
             commands::history_recently_played,
-            commands::history_clear,
             commands::history_record_play,
+            commands::stats_record_scrobble,
+            commands::stats_get_overview,
+            commands::stats_get_top_tracks,
+            commands::stats_get_top_artists,
+            commands::stats_get_top_albums,
+            commands::stats_list_scrobbles,
+            commands::stats_list_day_scrobbles,
+            commands::stats_list_story_years,
+            commands::stats_get_year_story,
             commands::player_get_state,
             commands::player_play,
             commands::player_pause,

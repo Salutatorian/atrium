@@ -1,5 +1,6 @@
 use parking_lot::Mutex;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use crate::audio::PlayerEngine;
@@ -13,6 +14,8 @@ pub struct AppState {
     pub settings: Arc<Mutex<AppSettings>>,
     pub scan_manager: Arc<ScanManager>,
     pub player: Arc<PlayerEngine>,
+    /// When true, window close / exit is allowed (Quit from tray).
+    pub allow_exit: AtomicBool,
 }
 
 impl AppState {
@@ -28,6 +31,7 @@ impl AppState {
             settings: Arc::new(Mutex::new(settings)),
             scan_manager: Arc::new(ScanManager::default()),
             player: Arc::new(player),
+            allow_exit: AtomicBool::new(false),
         }
     }
 }

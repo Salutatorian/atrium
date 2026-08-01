@@ -2,50 +2,48 @@ import { create } from "zustand";
 
 export type NavId =
   | "home"
-  | "songs"
-  | "albums"
-  | "artists"
-  | "folders"
+  | "library"
+  | "liked"
   | "playlists"
-  | "smart-playlists"
-  | "recently-added"
-  | "recently-played"
-  | "favorites"
-  | "history"
-  | "themes"
+  | "stats"
+  | "search"
   | "settings";
 
-export type InspectorTab =
-  | "queue"
-  | "lyrics"
-  | "track"
-  | "album"
-  | "file"
-  | "history"
-  | "audio";
+export type DrawerTab = "queue" | "lyrics" | "info";
+
+export type LibraryTab = "songs" | "albums" | "artists" | "folders";
 
 type ShellState = {
   activeNav: NavId;
+  libraryTab: LibraryTab;
   sidebarExpanded: boolean;
   inspectorOpen: boolean;
   inspectorWidth: number;
-  inspectorTab: InspectorTab;
+  inspectorTab: DrawerTab;
+  nowPlayingOpen: boolean;
   setActiveNav: (id: NavId) => void;
+  setLibraryTab: (tab: LibraryTab) => void;
   toggleSidebar: () => void;
   setSidebarExpanded: (expanded: boolean) => void;
   toggleInspector: () => void;
   setInspectorOpen: (open: boolean) => void;
   setInspectorWidth: (width: number) => void;
-  setInspectorTab: (tab: InspectorTab) => void;
+  setInspectorTab: (tab: DrawerTab) => void;
+  openDrawer: (tab: DrawerTab) => void;
+  toggleDrawer: (tab: DrawerTab) => void;
+  setNowPlayingOpen: (open: boolean) => void;
 };
 
-export const useShellStore = create<ShellState>((set) => ({
+export const useShellStore = create<ShellState>((set, get) => ({
   activeNav: "home",
+  libraryTab: "songs",
   sidebarExpanded: false,
   inspectorOpen: false,
-  inspectorWidth: 320,
+  inspectorWidth: 380,
   inspectorTab: "queue",
+  nowPlayingOpen: false,
   setActiveNav: (activeNav) => set({ activeNav }),
+  setLibraryTab: (libraryTab) => set({ libraryTab }),
   toggleSidebar: () =>
     set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
   setSidebarExpanded: (sidebarExpanded) => set({ sidebarExpanded }),
@@ -54,7 +52,17 @@ export const useShellStore = create<ShellState>((set) => ({
   setInspectorOpen: (inspectorOpen) => set({ inspectorOpen }),
   setInspectorWidth: (inspectorWidth) =>
     set({
-      inspectorWidth: Math.min(720, Math.max(240, Math.round(inspectorWidth))),
+      inspectorWidth: Math.min(480, Math.max(320, Math.round(inspectorWidth))),
     }),
   setInspectorTab: (inspectorTab) => set({ inspectorTab }),
+  openDrawer: (tab) => set({ inspectorOpen: true, inspectorTab: tab }),
+  toggleDrawer: (tab) => {
+    const { inspectorOpen, inspectorTab } = get();
+    if (inspectorOpen && inspectorTab === tab) {
+      set({ inspectorOpen: false });
+      return;
+    }
+    set({ inspectorOpen: true, inspectorTab: tab });
+  },
+  setNowPlayingOpen: (nowPlayingOpen) => set({ nowPlayingOpen }),
 }));

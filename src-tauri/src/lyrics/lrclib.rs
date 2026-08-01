@@ -16,31 +16,60 @@ struct LrcLibTrack {
     #[serde(default)]
     artist_name: Option<String>,
     #[serde(default)]
+    album_name: Option<String>,
+    #[serde(default)]
     plain_lyrics: Option<String>,
     #[serde(default)]
     synced_lyrics: Option<String>,
 }
 
 pub fn search(query: &LyricsSearchQuery) -> Result<Vec<LyricsSearchResult>, AppError> {
-    let mut q = query.title.clone();
-    if let Some(artist) = &query.artist {
-        q.push(' ');
-        q.push_str(artist);
-    }
-    let url = format!(
-        "{LRCLIB_BASE}/search?q={}",
-        urlencoding(&q)
-    );
+    // Prefer free-text `q` (same as lrclib.net search). Fall back to structured fields.
+    let url = if let Some(q) = query
+        .q
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        format!("{LRCLIB_BASE}/search?q={}", urlencoding(q))
+    } else if !query.title.trim().is_empty() {
+        let mut url = format!(
+            "{LRCLIB_BASE}/search?track_name={}",
+            urlencoding(query.title.trim())
+        );
+        if let Some(artist) = query.artist.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            url.push_str("&artist_name=");
+            url.push_str(&urlencoding(artist));
+        }
+        if let Some(album) = query.album.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            url.push_str("&album_name=");
+            url.push_str(&urlencoding(album));
+        }
+        url
+    } else if let Some(artist) = query.artist.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        format!(
+            "{LRCLIB_BASE}/search?q={}",
+            urlencoding(artist)
+        )
+    } else {
+        return Err(AppError::Message(
+            "Enter a search for LRCLIB (song, artist, or album)".into(),
+        ));
+    };
+
     let body = http_get(&url)?;
     let rows: Vec<LrcLibTrack> = serde_json::from_str(&body)
         .map_err(|e| AppError::Message(format!("LRCLIB search parse failed: {e}")))?;
     Ok(rows
         .into_iter()
-        .take(12)
+        .take(20)
         .map(|row| LyricsSearchResult {
             id: row.id.to_string(),
-            title: row.track_name.unwrap_or_else(|| query.title.clone()),
+            title: row
+                .track_name
+                .unwrap_or_else(|| query.title.clone()),
             artist: row.artist_name,
+            album: row.album_name,
             synced: row
                 .synced_lyrics
                 .as_ref()

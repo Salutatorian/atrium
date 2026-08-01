@@ -8,6 +8,9 @@ pub struct LyricsSearchQuery {
     pub artist: Option<String>,
     pub album: Option<String>,
     pub duration_ms: Option<u64>,
+    /// Free-text LRCLIB `q` search (matches title, artist, or album).
+    #[serde(default)]
+    pub q: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,6 +19,7 @@ pub struct LyricsSearchResult {
     pub id: String,
     pub title: String,
     pub artist: Option<String>,
+    pub album: Option<String>,
     pub synced: bool,
 }
 

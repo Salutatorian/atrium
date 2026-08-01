@@ -13,6 +13,8 @@ export type TrackSummary = {
   hasArtwork: boolean;
   artworkCacheKey?: string | null;
   dateAdded?: string | null;
+  /** True when the file is gone from disk or removed from the library index. */
+  missing?: boolean;
 };
 
 export type AlbumSummary = {
@@ -34,6 +36,13 @@ export type FolderSummary = {
   id: number;
   path: string;
   name: string;
+  trackCount: number;
+};
+
+export type LibraryRootSummary = {
+  id: number;
+  path: string;
+  label: string;
   trackCount: number;
 };
 

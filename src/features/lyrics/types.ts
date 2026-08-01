@@ -21,11 +21,14 @@ export type LyricsSearchQuery = {
   artist?: string;
   album?: string;
   durationMs?: number;
+  /** Free-text LRCLIB search (`q`), like lrclib.net */
+  q?: string;
 };
 
 export type LyricsSearchResult = {
   id: string;
   title: string;
   artist?: string;
+  album?: string;
   synced: boolean;
 };

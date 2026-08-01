@@ -34,7 +34,8 @@ export function useAppBootstrap() {
         hydrateCustomThemes();
         setThemeById(settings.appearance.themeId);
         setSidebarExpanded(settings.appearance.sidebarExpanded);
-        setInspectorOpen(settings.appearance.inspectorOpen);
+        // Listening-room default: drawer stays closed until requested.
+        setInspectorOpen(false);
         setInspectorWidth(settings.appearance.inspectorWidth);
         applyTheme();
       } catch {

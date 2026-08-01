@@ -1,158 +1,164 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TagEditor } from "../../features/library/TagEditor";
 import { LyricsPanel } from "../../features/lyrics/LyricsPanel";
 import { QueuePanel } from "../../features/player/QueuePanel";
-import {
-  useShellStore,
-  type InspectorTab,
-} from "../../stores/shell-store";
 import { usePlayerStore } from "../../stores/player-store";
-import { useSettingsStore } from "../../stores/settings-store";
+import { useShellStore, type DrawerTab } from "../../stores/shell-store";
 import { cn } from "../../utils/cn";
 
-const tabs: { id: InspectorTab; label: string }[] = [
+const tabs: { id: DrawerTab; label: string }[] = [
   { id: "queue", label: "Queue" },
   { id: "lyrics", label: "Lyrics" },
-  { id: "track", label: "Track" },
-  { id: "album", label: "Album" },
-  { id: "file", label: "File" },
-  { id: "history", label: "History" },
-  { id: "audio", label: "Audio" },
+  { id: "info", label: "Info" },
 ];
 
+/** Context drawer (Queue / Lyrics / Info). Closed by default; overlays content. */
 export function Inspector() {
   const open = useShellStore((s) => s.inspectorOpen);
   const width = useShellStore((s) => s.inspectorWidth);
   const tab = useShellStore((s) => s.inspectorTab);
   const setTab = useShellStore((s) => s.setInspectorTab);
-  const setWidth = useShellStore((s) => s.setInspectorWidth);
   const setOpen = useShellStore((s) => s.setInspectorOpen);
-  const patchAppearance = useSettingsStore((s) => s.patchAppearance);
-  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    function onMove(event: PointerEvent) {
-      if (!dragRef.current) return;
-      const delta = dragRef.current.startX - event.clientX;
-      setWidth(dragRef.current.startWidth + delta);
+    if (!open) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
     }
-    function onUp() {
-      if (!dragRef.current) return;
-      dragRef.current = null;
-      const nextWidth = useShellStore.getState().inspectorWidth;
-      void patchAppearance({ inspectorWidth: nextWidth });
-    }
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-  }, [patchAppearance, setWidth]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, setOpen]);
 
   if (!open) return null;
 
   return (
-    <aside
-      className="inspector"
-      style={{ width }}
-      aria-label="Inspector"
-    >
-      <div
-        className="inspector__resize"
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize inspector"
-        onPointerDown={(event) => {
-          dragRef.current = {
-            startX: event.clientX,
-            startWidth: width,
-          };
-        }}
+    <>
+      <button
+        type="button"
+        className="context-drawer__scrim"
+        aria-label="Close panel"
+        onClick={() => setOpen(false)}
       />
-      <div className="inspector__header">
-        <div className="inspector__tabs" role="tablist" aria-label="Inspector panels">
-          {tabs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.id}
-              className={cn(
-                "inspector__tab",
-                tab === item.id && "inspector__tab--active",
-              )}
-              onClick={() => setTab(item.id)}
+      <aside
+        ref={panelRef}
+        className="context-drawer"
+        style={{ width }}
+        aria-label="Context"
+      >
+        <div className="context-drawer__header">
+          <div
+            className="context-drawer__tabs"
+            role="tablist"
+            aria-label="Context panels"
+          >
+            {tabs.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === item.id}
+                className={cn(
+                  "context-drawer__tab",
+                  tab === item.id && "context-drawer__tab--active",
+                )}
+                onClick={() => setTab(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Close"
+            onClick={() => setOpen(false)}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
             >
-              {item.label}
-            </button>
-          ))}
+              <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Close inspector"
-          onClick={() => {
-            setOpen(false);
-            void patchAppearance({ inspectorOpen: false });
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-            <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
-          </svg>
-        </button>
-      </div>
-      <div className="inspector__body" role="tabpanel">
-        {tab === "queue" ? (
-          <QueuePanel />
-        ) : tab === "lyrics" ? (
-          <LyricsPanel />
-        ) : tab === "track" ? (
-          <TrackDetailsPanel />
-        ) : (
-          <p className="inspector__empty">
-            No selection yet. Import a library and play a track to inspect
-            details.
-          </p>
-        )}
-      </div>
-    </aside>
+        <div className="context-drawer__body" role="tabpanel">
+          {tab === "queue" ? <QueuePanel /> : null}
+          {tab === "lyrics" ? <LyricsPanel /> : null}
+          {tab === "info" ? <TrackInfoPanel /> : null}
+        </div>
+      </aside>
+    </>
   );
 }
 
-function TrackDetailsPanel() {
+function TrackInfoPanel() {
   const current = usePlayerStore((s) => s.current);
+  const [editing, setEditing] = useState(false);
+
   if (!current) {
     return (
       <p className="inspector__empty">
-        Nothing playing. Double-click a song to inspect it here.
+        Nothing playing. Start a song to see details.
       </p>
     );
   }
-  if (current.trackId > 0) {
-    return <TagEditor trackId={current.trackId} />;
+
+  if (editing && current.trackId > 0) {
+    return (
+      <div className="track-info">
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => setEditing(false)}
+        >
+          Done
+        </button>
+        <TagEditor trackId={current.trackId} />
+      </div>
+    );
   }
+
   return (
-    <dl className="track-details">
-      <div>
-        <dt>Title</dt>
-        <dd>{current.title || "Unknown title"}</dd>
-      </div>
-      <div>
-        <dt>Artist</dt>
-        <dd>{current.artist || "Unknown artist"}</dd>
-      </div>
-      <div>
-        <dt>Album</dt>
-        <dd>{current.album || "—"}</dd>
-      </div>
-      <div>
-        <dt>Path</dt>
-        <dd className="track-details__path">{current.path}</dd>
-      </div>
-      <p className="settings-note">
-        Tag editing is available for indexed library tracks.
-      </p>
-    </dl>
+    <div className="track-info">
+      <dl className="track-details">
+        <div>
+          <dt>Title</dt>
+          <dd>{current.title || "Unknown title"}</dd>
+        </div>
+        <div>
+          <dt>Artist</dt>
+          <dd>{current.artist || "Unknown artist"}</dd>
+        </div>
+        <div>
+          <dt>Album</dt>
+          <dd>{current.album || "—"}</dd>
+        </div>
+        <div>
+          <dt>Path</dt>
+          <dd className="track-details__path">{current.path}</dd>
+        </div>
+      </dl>
+      {current.trackId > 0 ? (
+        <button
+          type="button"
+          className="button-primary"
+          onClick={() => setEditing(true)}
+        >
+          Edit tags
+        </button>
+      ) : (
+        <p className="settings-note">
+          Tag editing is available for indexed library tracks.
+        </p>
+      )}
+    </div>
   );
 }

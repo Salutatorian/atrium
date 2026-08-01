@@ -30,6 +30,7 @@ function statusLabel(status: string): string {
 
 export function TaskCenter() {
   const scanEvents = useLibraryStore((s) => s.scanEvents);
+  const dismissScanEvent = useLibraryStore((s) => s.dismissScanEvent);
   const jobs = Object.values(scanEvents)
     .filter(
       (job) =>
@@ -48,7 +49,7 @@ export function TaskCenter() {
           job.discovered > 0
             ? Math.min(100, Math.round((job.processed / job.discovered) * 100))
             : 0;
-        const active = !["complete", "cancelled", "completed_with_errors"].includes(
+        const finished = ["complete", "cancelled", "completed_with_errors"].includes(
           job.status,
         );
 
@@ -56,10 +57,36 @@ export function TaskCenter() {
           <div key={job.jobId} className="task-card">
             <div className="task-card__header">
               <strong>{statusLabel(job.status)}</strong>
-              <span>
-                {job.processed}/{job.discovered}
-                {job.errors > 0 ? ` · ${job.errors} errors` : ""}
-              </span>
+              <div className="task-card__header-end">
+                <span>
+                  {job.processed}/{job.discovered}
+                  {job.errors > 0 ? ` · ${job.errors} errors` : ""}
+                </span>
+                <button
+                  type="button"
+                  className="task-card__dismiss"
+                  aria-label={finished ? "Dismiss" : "Dismiss notification"}
+                  title="Dismiss"
+                  onClick={() => {
+                    if (!finished) {
+                      void cancelLibraryScan(job.jobId);
+                    }
+                    dismissScanEvent(job.jobId);
+                  }}
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden="true"
+                  >
+                    <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div className="task-card__bar" aria-hidden="true">
               <div className="task-card__fill" style={{ width: `${pct}%` }} />
@@ -67,7 +94,7 @@ export function TaskCenter() {
             {job.currentPath || job.message ? (
               <p className="task-card__path">{job.message || job.currentPath}</p>
             ) : null}
-            {active ? (
+            {!finished ? (
               <div className="task-card__actions">
                 {job.status === "paused" ? (
                   <button

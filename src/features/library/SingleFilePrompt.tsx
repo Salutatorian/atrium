@@ -18,10 +18,10 @@ export function SingleFilePromptDialog() {
         aria-modal="true"
         aria-labelledby="single-file-title"
       >
-        <h2 id="single-file-title">Import music</h2>
+        <h2 id="single-file-title">Add music</h2>
         <p>
           <strong>{fileName(prompt.filePath)}</strong> was dropped. Play it now,
-          or add it to your library.
+          or add it to your library (indexed in place — not copied).
         </p>
         <div className="modal__actions">
           <button
@@ -41,7 +41,7 @@ export function SingleFilePromptDialog() {
               setPrompt(null);
             }}
           >
-            Import this file
+            Add this file
           </button>
           <button
             type="button"
@@ -50,7 +50,7 @@ export function SingleFilePromptDialog() {
               setPrompt(null);
             }}
           >
-            Import containing folder
+            Add containing folder
           </button>
           <button type="button" onClick={() => setPrompt(null)}>
             Cancel

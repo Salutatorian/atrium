@@ -12,6 +12,8 @@ pub struct SharedBuffer {
     samples: Mutex<VecDeque<f32>>,
     pub volume: AtomicU32, // f32 bits
     pub muted: AtomicBool,
+    /// When true, output silence without draining the buffer (instant pause).
+    pub paused: AtomicBool,
     pub dsp: DspControls,
     eq: Mutex<EqRuntime>,
 }
@@ -19,9 +21,10 @@ pub struct SharedBuffer {
 impl SharedBuffer {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
-            samples: Mutex::new(VecDeque::with_capacity(48_000 * 2 * 2)),
+            samples: Mutex::new(VecDeque::with_capacity(48_000 * 2 / 5)),
             volume: AtomicU32::new(f32::to_bits(0.8)),
             muted: AtomicBool::new(false),
+            paused: AtomicBool::new(false),
             dsp: DspControls::new(),
             eq: Mutex::new(EqRuntime::default()),
         })
@@ -29,7 +32,8 @@ impl SharedBuffer {
 
     pub fn push(&self, data: &[f32]) {
         let mut guard = self.samples.lock();
-        const MAX: usize = 48_000 * 2 * 3;
+        // Cap soft buffer ~250ms @ 48kHz stereo.
+        const MAX: usize = 48_000 * 2 / 4;
         while guard.len() + data.len() > MAX {
             guard.pop_front();
         }
@@ -45,6 +49,12 @@ impl SharedBuffer {
     }
 
     fn pop_into(&self, output: &mut [f32]) {
+        if self.paused.load(Ordering::Relaxed) {
+            for sample in output.iter_mut() {
+                *sample = 0.0;
+            }
+            return;
+        }
         let muted = self.muted.load(Ordering::Relaxed);
         let volume = f32::from_bits(self.volume.load(Ordering::Relaxed));
         let mut eq = self.eq.lock();

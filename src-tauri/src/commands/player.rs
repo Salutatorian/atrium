@@ -57,7 +57,17 @@ pub fn player_seek(state: State<'_, AppState>, position_ms: u64) -> Result<Playe
 
 #[tauri::command]
 pub fn player_set_volume(state: State<'_, AppState>, volume: f32) -> Result<PlayerSnapshot, AppError> {
+    let volume = volume.clamp(0.0, 1.0);
     state.player.set_volume(volume)?;
+
+    // Always remember the last level so it survives app close / relaunch.
+    {
+        let mut settings = state.settings.lock();
+        settings.playback.default_volume = f64::from(volume);
+        settings.playback.remember_volume = true;
+        crate::settings::save(&state.data_dir, &settings)?;
+    }
+
     Ok(state.player.snapshot())
 }
 
@@ -110,27 +120,64 @@ pub fn player_play_paths(
     paths: Vec<String>,
     start_index: Option<usize>,
 ) -> Result<PlayerSnapshot, AppError> {
+    use crate::library::artwork::{find_sidecar_artwork, persist_artwork};
+    use crate::library::metadata::parse_audio_file;
+    use std::path::Path;
+
     if paths.is_empty() {
         return Err(AppError::Message("No playable files selected".into()));
     }
+
+    let data_dir = state.data_dir.clone();
     let tracks: Vec<QueueTrack> = paths
         .into_iter()
         .enumerate()
         .map(|(i, path)| {
-            let title = std::path::Path::new(&path)
+            let fallback_title = Path::new(&path)
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .map(|s| s.to_string());
-            QueueTrack {
-                track_id: -(i as i64 + 1),
-                path,
-                title,
-                artist: None,
-                album: None,
-                duration_ms: None,
-                artwork_cache_key: None,
-                replaygain_track_gain: None,
-                replaygain_album_gain: None,
+
+            match parse_audio_file(Path::new(&path)) {
+                Ok(parsed) => {
+                    let mut artwork_cache_key = None;
+                    if let Some(bytes) = &parsed.artwork_bytes {
+                        if let Ok(key) = persist_artwork(&data_dir, &path, bytes) {
+                            artwork_cache_key = Some(key);
+                        }
+                    } else if let Some(sidecar) = find_sidecar_artwork(Path::new(&path)) {
+                        if let Ok(bytes) = std::fs::read(&sidecar) {
+                            if let Ok(key) =
+                                persist_artwork(&data_dir, &sidecar.to_string_lossy(), &bytes)
+                            {
+                                artwork_cache_key = Some(key);
+                            }
+                        }
+                    }
+
+                    QueueTrack {
+                        track_id: -(i as i64 + 1),
+                        path,
+                        title: parsed.title.or(fallback_title),
+                        artist: parsed.artist,
+                        album: parsed.album,
+                        duration_ms: parsed.duration_ms,
+                        artwork_cache_key,
+                        replaygain_track_gain: parsed.replaygain_track_gain,
+                        replaygain_album_gain: parsed.replaygain_album_gain,
+                    }
+                }
+                Err(_) => QueueTrack {
+                    track_id: -(i as i64 + 1),
+                    path,
+                    title: fallback_title,
+                    artist: None,
+                    album: None,
+                    duration_ms: None,
+                    artwork_cache_key: None,
+                    replaygain_track_gain: None,
+                    replaygain_album_gain: None,
+                },
             }
         })
         .collect();

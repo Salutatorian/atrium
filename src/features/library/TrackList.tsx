@@ -19,7 +19,7 @@ export function TrackList() {
   const virtualizer = useVirtualizer({
     count: tracks.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 56,
+    estimateSize: () => 68,
     overscan: 12,
   });
 
@@ -35,7 +35,8 @@ export function TrackList() {
   if (tracks.length === 0 && !loading) {
     return (
       <p className="empty-panel__detail">
-        No songs yet. Drop a folder or choose Import folder to begin.
+        No songs yet. Drop a folder or choose Add music to begin.
+        Songs stay on your computer — Atrium only finds them.
       </p>
     );
   }

@@ -7,6 +7,7 @@ import type {
   ArtistSummary,
   DropClassification,
   FolderSummary,
+  LibraryRootSummary,
   LibraryStats,
   Page,
   ScanJobSummary,
@@ -92,6 +93,15 @@ export async function fetchFolders(): Promise<FolderSummary[]> {
   return invoke<FolderSummary[]>("list_library_folders");
 }
 
+export async function fetchLibraryRoots(): Promise<LibraryRootSummary[]> {
+  if (!isTauriRuntime()) return [];
+  return invoke<LibraryRootSummary[]>("list_library_roots");
+}
+
+export async function removeLibraryFolder(rootId: number): Promise<void> {
+  await invoke("remove_library_folder", { rootId });
+}
+
 export async function rescanLibrary(): Promise<string> {
   return invoke<string>("rescan_library");
 }
@@ -114,6 +124,35 @@ export async function pickMusicFolder(): Promise<string | null> {
   });
   if (typeof selected === "string") return selected;
   return null;
+}
+
+export async function pickMusicFiles(): Promise<string[]> {
+  if (!isTauriRuntime()) return [];
+  const selected = await open({
+    multiple: true,
+    title: "Choose songs",
+    filters: [
+      {
+        name: "Audio",
+        extensions: [
+          "mp3",
+          "flac",
+          "wav",
+          "m4a",
+          "aac",
+          "ogg",
+          "opus",
+          "wma",
+          "aiff",
+          "aif",
+          "alac",
+        ],
+      },
+    ],
+  });
+  if (typeof selected === "string") return [selected];
+  if (Array.isArray(selected)) return selected;
+  return [];
 }
 
 export async function onScanProgress(

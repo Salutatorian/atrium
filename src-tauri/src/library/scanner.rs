@@ -6,8 +6,10 @@ use crate::library::extensions::is_supported_audio;
 use crate::library::metadata::parse_audio_file;
 use crate::library::models::{DropClassification, ScanProgressEvent};
 use crate::library::repository::{
-    create_scan_job, file_needs_rescan, record_import_error, update_scan_job, upsert_parsed_track,
+    collapse_duplicate_tracks, create_scan_job, file_needs_rescan, mark_absent_files_missing,
+    record_import_error, register_user_library_root, update_scan_job, upsert_parsed_track,
 };
+use crate::library::paths::{normalize_path, path_key};
 use parking_lot::Mutex;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -166,7 +168,19 @@ fn run_scan_job(
         },
     )?;
 
-    let root_paths: Vec<PathBuf> = paths.iter().map(PathBuf::from).collect();
+    let root_paths: Vec<PathBuf> = paths.iter().map(|p| normalize_path(Path::new(p))).collect();
+
+    // Remember the folders the user chose (index in place — never copy audio).
+    {
+        let state = app.state::<AppState>();
+        let db = state.db.lock();
+        for root in &root_paths {
+            if root.is_dir() {
+                let _ = register_user_library_root(&db, root);
+            }
+        }
+    }
+
     let library_settings = {
         let state = app.state::<AppState>();
         let settings = state.settings.lock().library.clone();
@@ -381,6 +395,11 @@ fn run_scan_job(
     {
         let state = app.state::<AppState>();
         let db = state.db.lock();
+        let present: std::collections::HashSet<String> =
+            discovered.iter().map(|p| path_key(p)).collect();
+        let roots: Vec<PathBuf> = paths.iter().map(|p| normalize_path(Path::new(p))).collect();
+        let _ = mark_absent_files_missing(&db, &roots, &present);
+        let _ = collapse_duplicate_tracks(&db);
         update_scan_job(
             &db,
             &job_id,
@@ -402,7 +421,7 @@ fn run_scan_job(
             processed,
             errors,
             current_path: None,
-            message: Some(format!("Imported {processed} files")),
+            message: Some(format!("Indexed {processed} files")),
         },
     )?;
 

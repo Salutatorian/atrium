@@ -3,13 +3,21 @@ import { playTracks } from "../player/api";
 import { formatDuration } from "../library/api";
 import type { TrackSummary } from "../library/types";
 import { usePlayerStore } from "../../stores/player-store";
-import { listFavorites, listHistory, listRecentlyPlayed, clearHistory } from "./api";
+import { IconHeart } from "../../components/icons";
+import {
+  listFavorites,
+  listHistory,
+  listRecentlyPlayed,
+  toggleFavorite,
+} from "./api";
 import type { HistoryEntry } from "./api";
+import { cn } from "../../utils/cn";
 
 export function FavoritesPage() {
   const [tracks, setTracks] = useState<TrackSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
+  const [busyId, setBusyId] = useState<number | null>(null);
   const applySnapshot = usePlayerStore((s) => s.applySnapshot);
 
   useEffect(() => {
@@ -26,35 +34,58 @@ export function FavoritesPage() {
     };
   }, [version]);
 
+  const playable = tracks.filter((t) => !t.missing && t.id > 0);
+
   return (
-    <section className="panel library-page" aria-label="Favorites">
-      <p className="panel__intro">
-        Tracks you heart from the player bar. Double-click to play.
-      </p>
+    <section className="panel library-page liked-page" aria-label="Liked">
+      <header className="liked-page__header">
+        <div>
+          <h1 className="view-title">Liked</h1>
+          <p className="library-view__lead">
+            Hearts keep title, artist, album, and art forever — even if you
+            remove the folder or delete the file. Unlike to drop a song.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => setVersion((v) => v + 1)}
+        >
+          Refresh
+        </button>
+      </header>
       {error ? <p className="settings-note">{error}</p> : null}
       {tracks.length === 0 ? (
         <p className="empty-panel__detail">
-          No favorites yet. Tap the heart on the player bar while a library
+          No liked songs yet. Tap the heart on the player bar while a library
           track is playing.
         </p>
       ) : (
         <TrackRows
           tracks={tracks}
-          onPlay={(index) => {
+          busyId={busyId}
+          onUnlike={async (track) => {
+            setBusyId(track.id);
+            try {
+              await toggleFavorite(track.id);
+              setVersion((v) => v + 1);
+            } catch (err: unknown) {
+              setError(err instanceof Error ? err.message : String(err));
+            } finally {
+              setBusyId(null);
+            }
+          }}
+          onPlay={(track) => {
+            if (track.missing) return;
+            const index = playable.findIndex((t) => t.id === track.id);
+            if (index < 0) return;
             void playTracks(
-              tracks.map((t) => t.id),
+              playable.map((t) => t.id),
               index,
             ).then(applySnapshot);
           }}
         />
       )}
-      <button
-        type="button"
-        className="text-button"
-        onClick={() => setVersion((v) => v + 1)}
-      >
-        Refresh
-      </button>
     </section>
   );
 }
@@ -91,9 +122,12 @@ export function RecentlyPlayedPage() {
       ) : (
         <TrackRows
           tracks={tracks}
-          onPlay={(index) => {
+          onPlay={(track) => {
+            const playable = tracks.filter((t) => !t.missing);
+            const index = playable.findIndex((t) => t.id === track.id);
+            if (index < 0) return;
             void playTracks(
-              tracks.map((t) => t.id),
+              playable.map((t) => t.id),
               index,
             ).then(applySnapshot);
           }}
@@ -130,18 +164,10 @@ export function HistoryPage() {
   return (
     <section className="panel library-page" aria-label="History">
       <p className="panel__intro">
-        Full listening log. Clear anytime — favorites and library stay intact.
+        Full listening log from your durable stats. It stays forever — across
+        downtime, closed windows, and the years.
       </p>
       <div className="playlist-detail__actions">
-        <button
-          type="button"
-          className="text-button"
-          onClick={() => {
-            void clearHistory().then(() => setVersion((v) => v + 1));
-          }}
-        >
-          Clear history
-        </button>
         <button
           type="button"
           className="text-button"
@@ -175,10 +201,10 @@ export function HistoryPage() {
                   }}
                 >
                   <strong>
-                    {track?.title || "Removed track"}
+                    {entry.title || track?.title || "Removed track"}
                   </strong>
                   <span className="muted">
-                    {track?.artist || "—"} · {entry.playedAt}
+                    {entry.artist || track?.artist || "—"} · {entry.playedAt}
                     {entry.completed ? " · completed" : ""}
                   </span>
                 </button>
@@ -194,27 +220,57 @@ export function HistoryPage() {
 function TrackRows({
   tracks,
   onPlay,
+  onUnlike,
+  busyId,
 }: {
   tracks: TrackSummary[];
-  onPlay: (index: number) => void;
+  onPlay: (track: TrackSummary) => void;
+  onUnlike?: (track: TrackSummary) => void;
+  busyId?: number | null;
 }) {
   return (
     <ul className="playlist-tracks">
-      {tracks.map((track, index) => (
-        <li key={track.id} className="playlist-track-row">
-          <button
-            type="button"
-            className="playlist-track-row__play"
-            onDoubleClick={() => onPlay(index)}
+      {tracks.map((track) => {
+        const gone = Boolean(track.missing);
+        return (
+          <li
+            key={`${track.id}-${track.trackUid || track.path}`}
+            className={cn(
+              "playlist-track-row",
+              gone && "playlist-track-row--missing",
+            )}
           >
-            <strong>{track.title || "Unknown title"}</strong>
-            <span className="muted">
-              {track.artist || "Unknown artist"} ·{" "}
-              {formatDuration(track.durationMs)}
-            </span>
-          </button>
-        </li>
-      ))}
+            <button
+              type="button"
+              className="playlist-track-row__play"
+              disabled={gone}
+              onDoubleClick={() => {
+                if (!gone) onPlay(track);
+              }}
+            >
+              <strong>{track.title || "Unknown title"}</strong>
+              <span className="muted">
+                {track.artist || "Unknown artist"}
+                {track.album ? ` · ${track.album}` : ""}
+                {gone
+                  ? " · file gone — metadata kept"
+                  : ` · ${formatDuration(track.durationMs)}`}
+              </span>
+            </button>
+            {onUnlike ? (
+              <button
+                type="button"
+                className="icon-button icon-button--active playlist-track-row__heart"
+                aria-label="Unlike"
+                disabled={busyId === track.id}
+                onClick={() => onUnlike(track)}
+              >
+                <IconHeart filled />
+              </button>
+            ) : null}
+          </li>
+        );
+      })}
     </ul>
   );
 }

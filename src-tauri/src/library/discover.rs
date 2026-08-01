@@ -1,7 +1,8 @@
 use crate::library::extensions::is_supported_audio;
+use crate::library::paths::normalize_path;
 use crate::settings::LibrarySettings;
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use walkdir::WalkDir;
 
 pub fn discover_audio_files(
@@ -14,8 +15,9 @@ pub fn discover_audio_files(
     for root in roots {
         if root.is_file() {
             if is_supported_audio(root) {
-                let canonical = canonicalize_lossy(root);
-                if seen.insert(canonical.clone()) {
+                let canonical = normalize_path(root);
+                let key = canonical.to_string_lossy().to_lowercase();
+                if seen.insert(key) {
                     files.push(canonical);
                 }
             }
@@ -54,8 +56,9 @@ pub fn discover_audio_files(
             if !is_supported_audio(path) {
                 continue;
             }
-            let canonical = canonicalize_lossy(path);
-            if seen.insert(canonical.clone()) {
+            let canonical = normalize_path(path);
+            let key = canonical.to_string_lossy().to_lowercase();
+            if seen.insert(key) {
                 files.push(canonical);
             }
         }
@@ -67,10 +70,6 @@ pub fn discover_audio_files(
 
 fn is_hidden_name(name: &str) -> bool {
     name.starts_with('.') || name.eq_ignore_ascii_case("System Volume Information")
-}
-
-fn canonicalize_lossy(path: &Path) -> PathBuf {
-    path.canonicalize().unwrap_or_else(|_| path.to_path_buf())
 }
 
 #[cfg(test)]

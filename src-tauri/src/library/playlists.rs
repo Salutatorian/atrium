@@ -125,7 +125,7 @@ pub fn list_playlist_tracks(
     let conn = db.conn();
     let mut stmt = conn.prepare(
         "SELECT t.id, t.track_uid, f.path, t.title, t.artist, t.album, t.album_artist, t.genre,
-                t.year, t.track_number, t.duration_ms, t.has_artwork, a.cache_key, t.date_added
+                t.year, t.track_number, t.duration_ms, t.has_artwork, COALESCE(a.cache_key, t.artwork_cache_key), t.date_added
          FROM playlist_items i
          JOIN tracks t ON t.id = i.track_id
          JOIN files f ON f.id = t.file_id
@@ -333,7 +333,7 @@ pub fn evaluate_smart_rules(
     let conn = db.conn();
     let mut stmt = conn.prepare(
         "SELECT t.id, t.track_uid, f.path, t.title, t.artist, t.album, t.album_artist, t.genre,
-                t.year, t.track_number, t.duration_ms, t.has_artwork, a.cache_key, t.date_added
+                t.year, t.track_number, t.duration_ms, t.has_artwork, COALESCE(a.cache_key, t.artwork_cache_key), t.date_added
          FROM tracks t
          JOIN files f ON f.id = t.file_id
          LEFT JOIN albums al ON al.id = t.album_id
@@ -456,6 +456,7 @@ mod tests {
             has_artwork: false,
             artwork_cache_key: None,
             date_added: None,
+            missing: false,
         }
     }
 

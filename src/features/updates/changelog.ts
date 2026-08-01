@@ -1,0 +1,162 @@
+/**
+ * Home "What's new" showcase.
+ *
+ * When shipping UI/product changes, append a new release here (newest first).
+ * Keep kinds consistent so the Home showcase stays predictable and theme-safe.
+ */
+
+export type UpdateKind =
+  | "add"
+  | "improve"
+  | "fix"
+  | "remove"
+  | "debug"
+  | "polish";
+
+export type UpdateChange = {
+  kind: UpdateKind;
+  text: string;
+};
+
+export type UpdateRelease = {
+  /** Stable id used for dismiss persistence. Bump for each showcase. */
+  id: string;
+  version: string;
+  title: string;
+  date: string;
+  summary: string;
+  changes: UpdateChange[];
+};
+
+export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
+  add: "Added",
+  improve: "Improved",
+  fix: "Fixed",
+  remove: "Removed",
+  debug: "Debug",
+  polish: "Polish",
+};
+
+/** Newest first. */
+export const UPDATE_RELEASES: UpdateRelease[] = [
+  {
+    id: "2026-08-index-in-place",
+    version: "0.1.0",
+    title: "Library indexes in place",
+    date: "2026-08-01",
+    summary:
+      "Adding music only finds your folders — it never copies songs onto your computer.",
+    changes: [
+      {
+        kind: "fix",
+        text: "Library roots remember the folder you chose instead of nesting album folders as separate roots",
+      },
+      {
+        kind: "fix",
+        text: "Rescan walks each top-level folder once so songs are not indexed twice",
+      },
+      {
+        kind: "improve",
+        text: "Clearer wording that Add music / drop indexes files in place",
+      },
+    ],
+  },
+  {
+    id: "2026-08-listening-stats",
+    version: "0.1.0",
+    title: "Listening stats",
+    date: "2026-08-01",
+    summary:
+      "Stats.fm-style listen tracking — every song you play is counted, even if the file is gone later.",
+    changes: [
+      {
+        kind: "add",
+        text: "Stats page with listening time, scrobbles, tops, and recent listens",
+      },
+      {
+        kind: "add",
+        text: "Durable scrobbles that keep title/artist/album after files are deleted",
+      },
+      {
+        kind: "add",
+        text: "Week / month / year / all-time ranges for tops and totals",
+      },
+      {
+        kind: "add",
+        text: "Home listening teaser linking into Stats",
+      },
+    ],
+  },
+  {
+    id: "2026-08-listening-room",
+    version: "0.1.0",
+    title: "Listening room redesign",
+    date: "2026-08-01",
+    summary:
+      "A quieter, music-first shell — fewer permanent panels, deeper tools when you ask.",
+    changes: [
+      {
+        kind: "improve",
+        text: "Primary navigation simplified to Home, Library, Playlists, Search, and Settings",
+      },
+      {
+        kind: "add",
+        text: "Library tabs for Songs, Albums, Artists, and Folders in one place",
+      },
+      {
+        kind: "add",
+        text: "Home listening landing with now-playing hero and recent sections",
+      },
+      {
+        kind: "add",
+        text: "Context drawer for Queue, Lyrics, and Info (closed by default)",
+      },
+      {
+        kind: "improve",
+        text: "Player dock focused on essentials; immersive and mini live under More",
+      },
+      {
+        kind: "add",
+        text: "Dedicated Themes page inside Settings with Theme Studio",
+      },
+      {
+        kind: "add",
+        text: "Unified Search view with Ctrl/Cmd+K",
+      },
+      {
+        kind: "remove",
+        text: "Crowded top-level destinations (separate Songs/Albums/Themes rail items)",
+      },
+      {
+        kind: "polish",
+        text: "Continuous canvas shell with softer surfaces and less boxy chrome",
+      },
+      {
+        kind: "fix",
+        text: "Theme Studio discoverability — Themes is now a Settings category",
+      },
+    ],
+  },
+];
+
+export function latestRelease(): UpdateRelease | null {
+  return UPDATE_RELEASES[0] ?? null;
+}
+
+export const SEEN_UPDATES_STORAGE_KEY = "atrium.updates.seenReleaseId";
+
+export function readSeenReleaseId(): string | null {
+  try {
+    return window.localStorage.getItem(SEEN_UPDATES_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function writeSeenReleaseId(id: string): void {
+  try {
+    window.localStorage.setItem(SEEN_UPDATES_STORAGE_KEY, id);
+  } catch {
+    // Ignore quota / private mode failures.
+  }
+}

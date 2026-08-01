@@ -18,10 +18,20 @@ pub struct AppSettings {
 pub struct GeneralSettings {
     pub launch_behavior: String,
     pub start_minimized: bool,
+    /// When true (default), the X button hides to the system tray instead of quitting.
+    #[serde(default = "default_true")]
+    pub close_to_tray: bool,
+    /// Launch Atrium when the user signs in (Windows / macOS / Linux).
+    #[serde(default)]
+    pub launch_at_login: bool,
     pub restore_last_page: bool,
     pub restore_queue: bool,
     pub language: String,
     pub check_for_updates: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -110,6 +120,8 @@ impl Default for AppSettings {
             general: GeneralSettings {
                 launch_behavior: "normal".into(),
                 start_minimized: false,
+                close_to_tray: true,
+                launch_at_login: false,
                 restore_last_page: true,
                 restore_queue: true,
                 language: "system".into(),

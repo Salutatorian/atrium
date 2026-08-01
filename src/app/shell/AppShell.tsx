@@ -5,10 +5,12 @@ import { TaskCenter } from "../../features/library/TaskCenter";
 import { ImmersiveStage } from "../../features/shell/ImmersiveStage";
 import { Atmosphere } from "../../features/themes/Atmosphere";
 import { useListeningRecorder } from "../../features/listening/use-listening-recorder";
+import { YearLookbackAutoOpen } from "../../features/listening/YearLookbackAutoOpen";
 import { useLibraryEvents } from "../../hooks/use-library-events";
 import { useMediaKeys } from "../../hooks/use-media-keys";
 import { usePlayerEvents } from "../../hooks/use-player-events";
 import { useReducedMotion } from "../../hooks/use-reduced-motion";
+import { useSearchHotkey } from "../../hooks/use-search-hotkey";
 import { useShellModeKeys } from "../../hooks/use-shell-mode-keys";
 import { useSystemTheme } from "../../hooks/use-system-theme";
 import { useSettingsStore } from "../../stores/settings-store";
@@ -16,6 +18,7 @@ import { cn } from "../../utils/cn";
 import { Inspector } from "./Inspector";
 import { NavRail } from "./NavRail";
 import { PlayerBar } from "./PlayerBar";
+import { TitleBar } from "./TitleBar";
 import { Workspace } from "./Workspace";
 
 type AppShellProps = {
@@ -32,6 +35,7 @@ export function AppShell({ appName }: AppShellProps) {
   useMediaKeys();
   useSystemTheme();
   useShellModeKeys();
+  useSearchHotkey();
 
   const mini = shellMode === "mini";
   const immersive = shellMode === "immersive";
@@ -48,32 +52,38 @@ export function AppShell({ appName }: AppShellProps) {
         data-app={appName}
         data-shell-mode={shellMode}
       >
-        <Atmosphere />
+        <TitleBar />
 
-        <a className="skip-link" href="#main-content">
-          Skip to content
-        </a>
+        <div className="app-shell__body">
+          <Atmosphere />
 
-        {mini ? null : immersive ? (
-          <ImmersiveStage />
-        ) : (
-          <div className="app-shell__layout">
-            <NavRail />
-            <div className="app-shell__center">
-              <Workspace />
-              <Inspector />
+          <a className="skip-link" href="#main-content">
+            Skip to content
+          </a>
+
+          {mini ? null : immersive ? (
+            <ImmersiveStage />
+          ) : (
+            <div className="app-shell__layout">
+              <NavRail />
+              <div className="app-shell__center">
+                <Workspace />
+                <Inspector />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {mini || immersive ? null : <TaskCenter />}
+          {mini || immersive ? null : <TaskCenter />}
+          {mini || immersive ? null : (
+            <>
+              <DropOverlay />
+              <SingleFilePromptDialog />
+            </>
+          )}
+        </div>
+
         <PlayerBar reducedMotion={reducedMotion} />
-        {mini || immersive ? null : (
-          <>
-            <DropOverlay />
-            <SingleFilePromptDialog />
-          </>
-        )}
+        <YearLookbackAutoOpen />
       </div>
     </TooltipPrimitive.Provider>
   );

@@ -1,1 +1,2 @@
-//! macOS-specific integrations (Now Playing, tray) — Phase 3+.
+//! macOS-specific notes (Now Playing can land later).
+//! Tray + launch-at-login are already cross-platform via Tauri plugins.

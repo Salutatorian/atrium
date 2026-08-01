@@ -1,15 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IconHeart, IconPlaylists } from "../../components/icons";
 import { Tooltip } from "../../components/Tooltip";
 import { ArtworkImage } from "../../features/library/ArtworkImage";
-import {
-  isFavorite,
-  toggleFavorite,
-} from "../../features/listening/api";
+import { isFavorite, toggleFavorite } from "../../features/listening/api";
 import {
   playerNext,
   playerPrevious,
-  playerSeek,
   playerSetMuted,
   playerSetRepeat,
   playerSetShuffle,
@@ -17,6 +13,7 @@ import {
   playerToggle,
 } from "../../features/player/api";
 import { formatPlaybackTime } from "../../features/player/format";
+import { SeekSlider } from "../../features/player/SeekSlider";
 import type { RepeatMode } from "../../features/player/types";
 import { usePlayerStore } from "../../stores/player-store";
 import { useShellStore } from "../../stores/shell-store";
@@ -44,11 +41,12 @@ function nextRepeat(mode: RepeatMode): RepeatMode {
 
 export function PlayerBar({ reducedMotion }: PlayerBarProps) {
   const inspectorOpen = useShellStore((s) => s.inspectorOpen);
-  const setInspectorOpen = useShellStore((s) => s.setInspectorOpen);
-  const setInspectorTab = useShellStore((s) => s.setInspectorTab);
-  const patchAppearance = useSettingsStore((s) => s.patchAppearance);
+  const inspectorTab = useShellStore((s) => s.inspectorTab);
+  const toggleDrawer = useShellStore((s) => s.toggleDrawer);
+  const setNowPlayingOpen = useShellStore((s) => s.setNowPlayingOpen);
   const style = useSettingsStore((s) => s.settings.appearance.playerBarStyle);
   const shellMode = useSettingsStore((s) => s.settings.appearance.shellMode);
+  const patchAppearance = useSettingsStore((s) => s.patchAppearance);
 
   const status = usePlayerStore((s) => s.status);
   const current = usePlayerStore((s) => s.current);
@@ -61,6 +59,8 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
   const error = usePlayerStore((s) => s.error);
   const applySnapshot = usePlayerStore((s) => s.applySnapshot);
   const [favorited, setFavorited] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   const playing = status === "playing";
   const hasTrack = Boolean(current);
@@ -85,6 +85,24 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
     };
   }, [current?.trackId]);
 
+  useEffect(() => {
+    if (!moreOpen) return;
+    function onPointer(event: PointerEvent) {
+      if (!moreRef.current?.contains(event.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setMoreOpen(false);
+    }
+    window.addEventListener("pointerdown", onPointer);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [moreOpen]);
+
   return (
     <div
       className={cn(
@@ -98,187 +116,197 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
       aria-label="Playback"
     >
       <div className="player-bar__track">
-        <ArtworkImage
-          className="player-bar__art"
-          cacheKey={current?.artworkCacheKey}
-          alt=""
-        />
-        <div className="player-bar__meta">
-          <p className="player-bar__title">
-            {current?.title || (hasTrack ? "Unknown title" : "Nothing playing")}
-          </p>
-          <p className="player-bar__artist">
-            {error
-              ? error
-              : current?.artist ||
-                (hasTrack ? "Unknown artist" : "Double-click a song to play")}
-          </p>
-        </div>
-        <Tooltip
-          label={
-            canFavorite
-              ? favorited
-                ? "Remove favorite"
-                : "Add favorite"
-              : "Favorite (library tracks only)"
-          }
-          side="top"
+        <button
+          type="button"
+          className="player-bar__now-open"
+          aria-label="Open now playing"
+          disabled={!hasTrack}
+          onClick={() => setNowPlayingOpen(true)}
         >
-          <button
-            type="button"
-            className={cn("icon-button", favorited && "icon-button--active")}
-            aria-label={favorited ? "Remove favorite" : "Add favorite"}
-            aria-pressed={favorited}
-            disabled={!canFavorite}
-            onClick={() => {
-              if (!current || current.trackId <= 0) return;
-              void toggleFavorite(current.trackId).then(setFavorited);
-            }}
-          >
-            <IconHeart filled={favorited} />
-          </button>
-        </Tooltip>
-      </div>
-
-      <div className="player-bar__transport">
-        <Tooltip label={shuffle ? "Shuffle on" : "Shuffle off"} side="top">
-          <button
-            type="button"
-            className={cn("icon-button", shuffle && "icon-button--active")}
-            aria-label="Shuffle"
-            aria-pressed={shuffle}
-            onClick={() => {
-              void playerSetShuffle(!shuffle).then(applySnapshot);
-            }}
-          >
-            <TransportGlyph kind="shuffle" />
-          </button>
-        </Tooltip>
-        <Tooltip label="Previous" side="top">
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="Previous"
-            disabled={!hasTrack}
-            onClick={() => {
-              void playerPrevious().then(applySnapshot);
-            }}
-          >
-            <TransportGlyph kind="prev" />
-          </button>
-        </Tooltip>
-        <Tooltip label={playing ? "Pause" : "Play"} side="top">
-          <button
-            type="button"
-            className="play-button"
-            aria-label={playing ? "Pause" : "Play"}
-            disabled={!hasTrack && status === "stopped"}
-            onClick={() => {
-              void playerToggle().then(applySnapshot);
-            }}
-          >
-            <TransportGlyph kind={playing ? "pause" : "play"} />
-          </button>
-        </Tooltip>
-        <Tooltip label="Next" side="top">
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="Next"
-            disabled={!hasTrack}
-            onClick={() => {
-              void playerNext().then(applySnapshot);
-            }}
-          >
-            <TransportGlyph kind="next" />
-          </button>
-        </Tooltip>
-        <Tooltip
-          label={
-            repeat === "off"
-              ? "Repeat off"
-              : repeat === "queue"
-                ? "Repeat queue"
-                : "Repeat track"
-          }
-          side="top"
-        >
-          <button
-            type="button"
-            className={cn("icon-button", repeat !== "off" && "icon-button--active")}
-            aria-label="Repeat"
-            aria-pressed={repeat !== "off"}
-            onClick={() => {
-              void playerSetRepeat(nextRepeat(repeat)).then(applySnapshot);
-            }}
-          >
-            <TransportGlyph kind={repeat === "track" ? "repeat-one" : "repeat"} />
-          </button>
-        </Tooltip>
-      </div>
-
-      <div className="player-bar__timeline">
-        <span>{formatPlaybackTime(positionMs)}</span>
-        <label className="player-bar__scrub">
-          <span className="sr-only">Seek</span>
-          <input
-            type="range"
-            min={0}
-            max={scrubMax}
-            step={250}
-            value={Math.min(positionMs, scrubMax)}
-            disabled={!hasTrack}
-            aria-label="Seek"
-            style={{ ["--scrub-progress" as string]: `${progress}%` }}
-            onChange={(event) => {
-              const next = Number(event.target.value);
-              void playerSeek(next).then(applySnapshot);
-            }}
+          <ArtworkImage
+            className="player-bar__art"
+            cacheKey={current?.artworkCacheKey}
+            alt=""
           />
-        </label>
-        <span>
-          {durationMs > 0 ? formatPlaybackTime(durationMs) : "…"}
-        </span>
+          <div className="player-bar__meta">
+            <p className="player-bar__title">
+              {current?.title ||
+                (hasTrack ? "Unknown title" : "Nothing playing")}
+            </p>
+            <p className="player-bar__artist">
+              {error
+                ? error
+                : current?.artist ||
+                  (hasTrack ? "Unknown artist" : "Choose a song to begin")}
+            </p>
+          </div>
+        </button>
+        {canFavorite ? (
+          <Tooltip
+            label={favorited ? "Remove favorite" : "Add favorite"}
+            side="top"
+          >
+            <button
+              type="button"
+              className={cn(
+                "icon-button player-bar__favorite",
+                favorited && "icon-button--active",
+              )}
+              aria-label={favorited ? "Remove favorite" : "Add favorite"}
+              aria-pressed={favorited}
+              onClick={() => {
+                if (!current || current.trackId <= 0) return;
+                void toggleFavorite(current.trackId).then(setFavorited);
+              }}
+            >
+              <IconHeart filled={favorited} />
+            </button>
+          </Tooltip>
+        ) : null}
+      </div>
+
+      <div className="player-bar__center">
+        <div className="player-bar__transport">
+          <Tooltip label={shuffle ? "Shuffle on" : "Shuffle off"} side="top">
+            <button
+              type="button"
+              className={cn(
+                "icon-button icon-button--quiet",
+                shuffle && "icon-button--active",
+              )}
+              aria-label="Shuffle"
+              aria-pressed={shuffle}
+              onClick={() => {
+                void playerSetShuffle(!shuffle).then(applySnapshot);
+              }}
+            >
+              <TransportGlyph kind="shuffle" />
+            </button>
+          </Tooltip>
+          <Tooltip label="Previous" side="top">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Previous"
+              disabled={!hasTrack}
+              onClick={() => {
+                void playerPrevious().then(applySnapshot);
+              }}
+            >
+              <TransportGlyph kind="prev" />
+            </button>
+          </Tooltip>
+          <Tooltip label={playing ? "Pause" : "Play"} side="top">
+            <button
+              type="button"
+              className="play-button"
+              aria-label={playing ? "Pause" : "Play"}
+              disabled={!hasTrack && status === "stopped"}
+              onClick={() => {
+                void playerToggle().then(applySnapshot);
+              }}
+            >
+              <TransportGlyph kind={playing ? "pause" : "play"} />
+            </button>
+          </Tooltip>
+          <Tooltip label="Next" side="top">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Next"
+              disabled={!hasTrack}
+              onClick={() => {
+                void playerNext().then(applySnapshot);
+              }}
+            >
+              <TransportGlyph kind="next" />
+            </button>
+          </Tooltip>
+          <Tooltip
+            label={
+              repeat === "off"
+                ? "Repeat off"
+                : repeat === "queue"
+                  ? "Repeat queue"
+                  : "Repeat track"
+            }
+            side="top"
+          >
+            <button
+              type="button"
+              className={cn(
+                "icon-button icon-button--quiet",
+                repeat !== "off" && "icon-button--active",
+              )}
+              aria-label="Repeat"
+              aria-pressed={repeat !== "off"}
+              onClick={() => {
+                void playerSetRepeat(nextRepeat(repeat)).then(applySnapshot);
+              }}
+            >
+              <TransportGlyph
+                kind={repeat === "track" ? "repeat-one" : "repeat"}
+              />
+            </button>
+          </Tooltip>
+        </div>
+
+        <div className="player-bar__timeline">
+          <span>{formatPlaybackTime(positionMs)}</span>
+          <SeekSlider
+            className="player-bar__scrub"
+            max={scrubMax}
+            positionMs={positionMs}
+            progress={progress}
+            disabled={!hasTrack}
+          />
+          <span>{durationMs > 0 ? formatPlaybackTime(durationMs) : "…"}</span>
+        </div>
       </div>
 
       <div className="player-bar__extras">
-        <label className="volume-control">
-          <span className="sr-only">Volume</span>
+        <div className="volume-control">
           <button
             type="button"
-            className="icon-button"
+            className="icon-button volume-control__mute"
             aria-label={muted ? "Unmute" : "Mute"}
             onClick={() => {
               void playerSetMuted(!muted).then(applySnapshot);
             }}
           >
-            <TransportGlyph kind={muted || volume === 0 ? "volume-mute" : "volume"} />
+            <TransportGlyph
+              kind={muted || volume === 0 ? "volume-mute" : "volume"}
+            />
           </button>
           <input
             type="range"
             min={0}
             max={1}
-            step={0.01}
+            step={0.005}
             value={muted ? 0 : volume}
             aria-label="Volume"
+            aria-valuetext={`${Math.round((muted ? 0 : volume) * 100)} percent`}
+            style={{
+              ["--volume-progress" as string]: `${(muted ? 0 : volume) * 100}%`,
+            }}
             onChange={(event) => {
               const next = Number(event.target.value);
               void playerSetVolume(next).then(applySnapshot);
             }}
           />
-        </label>
+        </div>
         <Tooltip label="Queue" side="top">
           <button
             type="button"
-            className="icon-button"
-            aria-label="Open queue"
-            aria-pressed={inspectorOpen}
-            onClick={() => {
-              const next = !inspectorOpen;
-              setInspectorTab("queue");
-              setInspectorOpen(next);
-              void patchAppearance({ inspectorOpen: next });
-            }}
+            className={cn(
+              "icon-button",
+              inspectorOpen &&
+                inspectorTab === "queue" &&
+                "icon-button--active",
+            )}
+            aria-label="Queue"
+            aria-pressed={inspectorOpen && inspectorTab === "queue"}
+            onClick={() => toggleDrawer("queue")}
           >
             <IconPlaylists />
           </button>
@@ -286,61 +314,74 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
         <Tooltip label="Lyrics" side="top">
           <button
             type="button"
-            className="icon-button"
-            aria-label="Open lyrics"
-            onClick={() => {
-              setInspectorTab("lyrics");
-              setInspectorOpen(true);
-              void patchAppearance({ inspectorOpen: true });
-            }}
+            className={cn(
+              "icon-button",
+              inspectorOpen &&
+                inspectorTab === "lyrics" &&
+                "icon-button--active",
+            )}
+            aria-label="Lyrics"
+            aria-pressed={inspectorOpen && inspectorTab === "lyrics"}
+            onClick={() => toggleDrawer("lyrics")}
           >
             <TransportGlyph kind="lyrics" />
           </button>
         </Tooltip>
-        <Tooltip
-          label={shellMode === "immersive" ? "Exit immersive" : "Immersive mode"}
-          side="top"
-        >
-          <button
-            type="button"
-            className={cn(
-              "icon-button",
-              shellMode === "immersive" && "icon-button--active",
-            )}
-            aria-label={
-              shellMode === "immersive" ? "Exit immersive" : "Immersive mode"
-            }
-            aria-pressed={shellMode === "immersive"}
-            onClick={() => {
-              void patchAppearance({
-                shellMode: shellMode === "immersive" ? "normal" : "immersive",
-              });
-            }}
-          >
-            <TransportGlyph kind="immersive" />
-          </button>
-        </Tooltip>
-        <Tooltip
-          label={shellMode === "mini" ? "Exit mini player" : "Mini player"}
-          side="top"
-        >
-          <button
-            type="button"
-            className={cn(
-              "icon-button",
-              shellMode === "mini" && "icon-button--active",
-            )}
-            aria-label={shellMode === "mini" ? "Exit mini player" : "Mini player"}
-            aria-pressed={shellMode === "mini"}
-            onClick={() => {
-              void patchAppearance({
-                shellMode: shellMode === "mini" ? "normal" : "mini",
-              });
-            }}
-          >
-            <TransportGlyph kind="mini" />
-          </button>
-        </Tooltip>
+        <div className="player-bar__more" ref={moreRef}>
+          <Tooltip label="More" side="top">
+            <button
+              type="button"
+              className={cn("icon-button", moreOpen && "icon-button--active")}
+              aria-label="More playback options"
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((open) => !open)}
+            >
+              <TransportGlyph kind="more" />
+            </button>
+          </Tooltip>
+          {moreOpen ? (
+            <div className="player-more-menu" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  void patchAppearance({
+                    shellMode:
+                      shellMode === "immersive" ? "normal" : "immersive",
+                  });
+                  setMoreOpen(false);
+                }}
+              >
+                {shellMode === "immersive"
+                  ? "Exit immersive"
+                  : "Immersive mode"}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  void patchAppearance({
+                    shellMode: shellMode === "mini" ? "normal" : "mini",
+                  });
+                  setMoreOpen(false);
+                }}
+              >
+                {shellMode === "mini" ? "Exit mini player" : "Mini player"}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  toggleDrawer("info");
+                  setMoreOpen(false);
+                }}
+              >
+                Track info
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -360,8 +401,7 @@ function TransportGlyph({
     | "volume"
     | "volume-mute"
     | "lyrics"
-    | "immersive"
-    | "mini";
+    | "more";
 }) {
   switch (kind) {
     case "shuffle":
@@ -432,17 +472,12 @@ function TransportGlyph({
           <path d="M6 7h12M6 12h12M6 17h8" strokeLinecap="round" />
         </svg>
       );
-    case "immersive":
+    case "more":
       return (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-          <path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    case "mini":
-      return (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-          <rect x="4" y="10" width="16" height="8" rx="3" />
-          <path d="M8 10V8a4 4 0 0 1 8 0v2" strokeLinecap="round" />
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.6" />
+          <circle cx="12" cy="12" r="1.6" />
+          <circle cx="19" cy="12" r="1.6" />
         </svg>
       );
     default: {

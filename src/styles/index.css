@@ -65,6 +65,18 @@ button:disabled {
   border: 0;
 }
 
+/* Keep scroll, hide chrome scrollbars (dev + release). */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .skip-link {
   position: absolute;
   left: 1rem;

@@ -1,5 +1,17 @@
 # Packaging & updates — Atrium
 
+## Versioned releases (Windows / macOS / Linux)
+
+Pushing a version tag (for example `v1.0.0`) runs `.github/workflows/release.yml`, which builds installers on GitHub Actions for:
+
+| Platform | Artifact (typical) |
+| --- | --- |
+| Windows | NSIS / MSI under release assets |
+| macOS | `.app` / DMG (Apple Silicon + Intel) |
+| Linux | AppImage / deb |
+
+Apple notarization and Windows Authenticode signing are optional later steps (require certificates). Unsigned builds still install; OS may show a first-run warning.
+
 ## Local installer builds
 
 Prerequisites: Node 20+, Rust stable, platform WebView2 / WebKitGTK as required by Tauri 2.

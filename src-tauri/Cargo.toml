@@ -1,6 +1,6 @@
 [package]
 name = "atrium"
-version = "0.1.0"
+version = "1.0.0"
 description = "Atrium — offline-first personal music environment"
 authors = ["Atrium contributors"]
 edition = "2021"
@@ -13,7 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["protocol-asset"] }
+tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2.7.2"
 serde = { version = "1", features = ["derive"] }
@@ -34,6 +34,7 @@ crossbeam-channel = "0.5.16"
 rand = "0.10.2"
 cpal = "0.15.3"
 ureq = { version = "2.12.1", default-features = true, features = ["json"] }
+tauri-plugin-autostart = "2.5.1"
 
 [dev-dependencies]
 tempfile = "3.27.0"
