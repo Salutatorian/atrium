@@ -45,4 +45,4 @@ Themes are JSON documents with no executable code. File kind: `atrium-theme.json
 
 ## Licensing stance
 
-Original presets only in core (Mist, Dusk, plus the Atrium catalog). External packs — including Monkeytype theme JSON (GPL-3.0) — stay out of the distribution until attribution and license compatibility are reviewed. Compatible `.atrium-theme.json` files can still be imported locally.
+Original presets only in core: Mist, Dusk, and a ~100-theme Atrium catalog of original palettes. External packs — including Monkeytype theme JSON (GPL-3.0) — stay out of the distribution. Compatible `.atrium-theme.json` files can still be imported locally.

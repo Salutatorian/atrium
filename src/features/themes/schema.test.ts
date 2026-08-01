@@ -13,8 +13,8 @@ describe("theme schema", () => {
     expect(validateThemeDocument(duskTheme).id).toBe("atrium-dusk");
   });
 
-  it("validates the full Atrium catalog", () => {
-    expect(builtinThemes.length).toBeGreaterThan(10);
+  it("ships about one hundred built-in presets", () => {
+    expect(builtinThemes.length).toBeGreaterThanOrEqual(100);
     for (const theme of builtinThemes) {
       expect(validateThemeDocument(theme).id).toBe(theme.id);
     }
