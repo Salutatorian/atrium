@@ -48,11 +48,11 @@
 
 ## Phase 4 — Personalization
 
-- [ ] Theme browser/editor
-- [ ] Custom backgrounds
-- [ ] Theme import/export
-- [ ] Immersive + mini modes
-- [ ] Layout density polish
+- [x] Theme browser/editor (atmosphere controls + custom theme save)
+- [x] Custom backgrounds (gradient/solid/album/user-image modes)
+- [x] Theme import/export (`.atrium-theme.json`)
+- [x] Immersive + mini modes
+- [x] Layout density polish
 
 ## Phase 5 — Lyrics
 

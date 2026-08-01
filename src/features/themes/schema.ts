@@ -168,9 +168,15 @@ export function themeToCssVariables(theme: ThemeDocument): Record<string, string
   vars["--control-height"] = `${a.controlHeight}px`;
   vars["--sidebar-width"] = `${a.sidebarWidth}px`;
   vars["--inspector-width"] = `${a.inspectorWidth}px`;
-  vars["--bg-noise"] = String(theme.background.noiseAmount);
-  vars["--bg-vignette"] = String(theme.background.vignetteAmount);
-  vars["--bg-animation"] = String(theme.background.animationStrength);
+  const bg = theme.background;
+  vars["--bg-noise"] = String(bg.noiseAmount);
+  vars["--bg-vignette"] = String(bg.vignetteAmount);
+  vars["--bg-animation"] = String(bg.animationStrength);
+  vars["--bg-blur"] = `${bg.blur}px`;
+  vars["--bg-darkness"] = String(bg.darkness);
+  vars["--bg-brightness"] = String(bg.brightness);
+  vars["--bg-saturation"] = String(bg.saturation);
+  vars["--bg-overlay"] = String(bg.overlayOpacity);
 
   return vars;
 }

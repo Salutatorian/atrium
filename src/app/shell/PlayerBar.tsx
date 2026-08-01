@@ -43,6 +43,7 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
   const setInspectorTab = useShellStore((s) => s.setInspectorTab);
   const patchAppearance = useSettingsStore((s) => s.patchAppearance);
   const style = useSettingsStore((s) => s.settings.appearance.playerBarStyle);
+  const shellMode = useSettingsStore((s) => s.settings.appearance.shellMode);
 
   const status = usePlayerStore((s) => s.status);
   const current = usePlayerStore((s) => s.current);
@@ -65,6 +66,8 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
       className={cn(
         "player-bar",
         `player-bar--${style}`,
+        shellMode === "mini" && "player-bar--mini",
+        shellMode === "immersive" && "player-bar--immersive",
         !reducedMotion && "player-bar--alive",
       )}
       role="region"
@@ -251,15 +254,48 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
             <TransportGlyph kind="lyrics" />
           </button>
         </Tooltip>
-        <Tooltip label="Immersive mode" side="top">
+        <Tooltip
+          label={shellMode === "immersive" ? "Exit immersive" : "Immersive mode"}
+          side="top"
+        >
           <button
             type="button"
-            className="icon-button"
-            aria-label="Immersive mode"
-            disabled
-            title="Immersive mode arrives in Phase 4"
+            className={cn(
+              "icon-button",
+              shellMode === "immersive" && "icon-button--active",
+            )}
+            aria-label={
+              shellMode === "immersive" ? "Exit immersive" : "Immersive mode"
+            }
+            aria-pressed={shellMode === "immersive"}
+            onClick={() => {
+              void patchAppearance({
+                shellMode: shellMode === "immersive" ? "normal" : "immersive",
+              });
+            }}
           >
             <TransportGlyph kind="immersive" />
+          </button>
+        </Tooltip>
+        <Tooltip
+          label={shellMode === "mini" ? "Exit mini player" : "Mini player"}
+          side="top"
+        >
+          <button
+            type="button"
+            className={cn(
+              "icon-button",
+              shellMode === "mini" && "icon-button--active",
+            )}
+            aria-label={shellMode === "mini" ? "Exit mini player" : "Mini player"}
+            aria-pressed={shellMode === "mini"}
+            onClick={() => {
+              void patchAppearance({
+                shellMode: shellMode === "mini" ? "normal" : "mini",
+              });
+            }}
+          >
+            <TransportGlyph kind="mini" />
           </button>
         </Tooltip>
       </div>
@@ -281,7 +317,8 @@ function TransportGlyph({
     | "volume"
     | "volume-mute"
     | "lyrics"
-    | "immersive";
+    | "immersive"
+    | "mini";
 }) {
   switch (kind) {
     case "shuffle":
@@ -354,6 +391,13 @@ function TransportGlyph({
       return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
           <path d="M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case "mini":
+      return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+          <rect x="4" y="10" width="16" height="8" rx="3" />
+          <path d="M8 10V8a4 4 0 0 1 8 0v2" strokeLinecap="round" />
         </svg>
       );
     default: {

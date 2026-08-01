@@ -49,10 +49,16 @@ pub struct AppearanceSettings {
     pub follow_system_theme: bool,
     pub density: String,
     pub player_bar_style: String,
+    #[serde(default = "default_shell_mode")]
+    pub shell_mode: String,
     pub sidebar_expanded: bool,
     pub inspector_open: bool,
     pub inspector_width: u32,
     pub reduced_motion: String,
+}
+
+fn default_shell_mode() -> String {
+    "normal".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -102,6 +108,7 @@ impl Default for AppSettings {
                 follow_system_theme: false,
                 density: "comfortable".into(),
                 player_bar_style: "floating-pill".into(),
+                shell_mode: "normal".into(),
                 sidebar_expanded: false,
                 inspector_open: false,
                 inspector_width: 320,
@@ -151,6 +158,18 @@ impl AppSettings {
                 "appearance.density must be compact, comfortable, or spacious".into(),
             ));
         }
+        let bar = self.appearance.player_bar_style.as_str();
+        if !matches!(bar, "floating-pill" | "full-width") {
+            return Err(AppError::Message(
+                "appearance.playerBarStyle must be floating-pill or full-width".into(),
+            ));
+        }
+        let shell = self.appearance.shell_mode.as_str();
+        if !matches!(shell, "normal" | "immersive" | "mini") {
+            return Err(AppError::Message(
+                "appearance.shellMode must be normal, immersive, or mini".into(),
+            ));
+        }
         let motion = self.appearance.reduced_motion.as_str();
         if !matches!(motion, "system" | "reduce" | "no-preference") {
             return Err(AppError::Message(
@@ -174,6 +193,13 @@ mod tests {
     fn rejects_invalid_volume() {
         let mut settings = AppSettings::default();
         settings.playback.default_volume = 1.5;
+        assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn rejects_invalid_shell_mode() {
+        let mut settings = AppSettings::default();
+        settings.appearance.shell_mode = "cinema".into();
         assert!(settings.validate().is_err());
     }
 }

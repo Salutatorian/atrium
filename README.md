@@ -7,21 +7,17 @@ Atrium is a private listening room for your local music library — not a stream
 
 ## Current status
 
-**Phase 0–3** are implemented.
+**Phase 0–4** are implemented.
 
-Phase 2–3 deliver:
+Highlights:
 
-- Drag/drop and folder import
-- Background scanner with pause / cancel / resume
-- Lofty metadata extraction and artwork cache
-- Songs / Albums / Artists / Folders views
-- Virtualized track list and FTS search
-- Compact task center for scan progress
-- Symphonia + cpal playback engine
-- Queue, transport, seek, volume, shuffle / repeat
-- Window media keys (Space / next / previous)
+- Drag/drop and folder import with background scanning
+- Library browse (songs / albums / artists / folders) + FTS search
+- Symphonia + cpal playback with queue and transport
+- Theme studio: presets, atmosphere controls, import/export
+- Immersive and mini player modes, density + player bar styles
 
-Lyrics, immersive mode, and DSP remain for later phases.
+Lyrics and advanced DSP remain for later phases.
 
 ## Development
 

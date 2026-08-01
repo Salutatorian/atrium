@@ -44,21 +44,36 @@
   --bg-noise: 0.04;
   --bg-vignette: 0.18;
   --bg-animation: 0.25;
+  --bg-blur: 0px;
+  --bg-darkness: 0.02;
+  --bg-brightness: 1;
+  --bg-saturation: 1;
+  --bg-overlay: 0.12;
   --shell-gap: calc(12px * var(--spacing-scale));
   --player-offset: calc(18px * var(--spacing-scale));
+  --density-font-adjust: 0px;
+  --density-list-gap: 0.75rem;
 }
 
 .density-compact {
-  --spacing-scale: 0.9;
+  --spacing-scale: 0.88;
   --control-height: 32px;
+  --density-font-adjust: -0.5px;
+  --density-list-gap: 0.55rem;
+  --font-size-base: calc(14px + var(--density-font-adjust));
 }
 
 .density-comfortable {
   --spacing-scale: 1;
   --control-height: 36px;
+  --density-font-adjust: 0px;
+  --density-list-gap: 0.75rem;
 }
 
 .density-spacious {
-  --spacing-scale: 1.12;
-  --control-height: 40px;
+  --spacing-scale: 1.16;
+  --control-height: 42px;
+  --density-font-adjust: 1px;
+  --density-list-gap: 0.95rem;
+  --font-size-base: calc(14px + var(--density-font-adjust));
 }

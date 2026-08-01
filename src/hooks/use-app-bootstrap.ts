@@ -9,6 +9,7 @@ export function useAppBootstrap() {
   const hydrate = useSettingsStore((s) => s.hydrate);
   const setThemeById = useThemeStore((s) => s.setThemeById);
   const applyTheme = useThemeStore((s) => s.applyToDocument);
+  const hydrateCustomThemes = useThemeStore((s) => s.hydrateCustomThemes);
   const setSidebarExpanded = useShellStore((s) => s.setSidebarExpanded);
   const setInspectorOpen = useShellStore((s) => s.setInspectorOpen);
   const setInspectorWidth = useShellStore((s) => s.setInspectorWidth);
@@ -30,6 +31,7 @@ export function useAppBootstrap() {
         if (cancelled) return;
 
         hydrate(settings);
+        hydrateCustomThemes();
         setThemeById(settings.appearance.themeId);
         setSidebarExpanded(settings.appearance.sidebarExpanded);
         setInspectorOpen(settings.appearance.inspectorOpen);
@@ -38,6 +40,7 @@ export function useAppBootstrap() {
       } catch {
         if (!cancelled) {
           hydrate(defaultSettings);
+          hydrateCustomThemes();
           setThemeById(defaultSettings.appearance.themeId);
           applyTheme();
         }
@@ -53,6 +56,7 @@ export function useAppBootstrap() {
   }, [
     applyTheme,
     hydrate,
+    hydrateCustomThemes,
     setInspectorOpen,
     setInspectorWidth,
     setSidebarExpanded,

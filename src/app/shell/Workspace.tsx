@@ -7,12 +7,10 @@ import {
   SongsPage,
 } from "../../features/library/LibraryPages";
 import { LibraryToolbar } from "../../features/library/LibraryToolbar";
-import { builtinThemes } from "../../features/themes/presets";
+import { SettingsPanel } from "../../features/settings/SettingsPanel";
+import { ThemesStudio } from "../../features/themes/ThemesStudio";
 import { useLibraryStore } from "../../stores/library-store";
 import { useShellStore, type NavId } from "../../stores/shell-store";
-import { useThemeStore } from "../../stores/theme-store";
-import { useSettingsStore } from "../../stores/settings-store";
-import { cn } from "../../utils/cn";
 
 const titles: Record<NavId, string> = {
   home: "Listening room",
@@ -47,7 +45,7 @@ export function Workspace() {
         {activeNav === "artists" ? <ArtistsPage /> : null}
         {activeNav === "folders" ? <FoldersPage /> : null}
         {activeNav === "recently-added" ? <RecentlyAddedPage /> : null}
-        {activeNav === "themes" ? <ThemesPanel /> : null}
+        {activeNav === "themes" ? <ThemesStudio /> : null}
         {activeNav === "settings" ? <SettingsPanel /> : null}
         {activeNav === "playlists" ||
         activeNav === "smart-playlists" ||
@@ -96,107 +94,6 @@ function EmptyLibraryPanel({ section }: { section: string }) {
         This view is reserved for a later phase. Your imported library is
         available under Songs, Albums, Artists, and Folders.
       </p>
-    </section>
-  );
-}
-
-function ThemesPanel() {
-  const theme = useThemeStore((s) => s.theme);
-  const setTheme = useThemeStore((s) => s.setTheme);
-  const setPreviewTheme = useThemeStore((s) => s.setPreviewTheme);
-  const patchAppearance = useSettingsStore((s) => s.patchAppearance);
-
-  return (
-    <section className="panel themes-panel" aria-label="Themes">
-      <p className="panel__intro">
-        Original Atrium presets. Importable theme files and a full studio arrive
-        later — the token engine is already live.
-      </p>
-      <ul className="theme-grid">
-        {builtinThemes.map((item) => (
-          <li key={item.id}>
-            <button
-              type="button"
-              className={cn(
-                "theme-card",
-                theme.id === item.id && "theme-card--active",
-              )}
-              onMouseEnter={() => setPreviewTheme(item)}
-              onMouseLeave={() => setPreviewTheme(null)}
-              onFocus={() => setPreviewTheme(item)}
-              onBlur={() => setPreviewTheme(null)}
-              onClick={() => {
-                setTheme(item);
-                void patchAppearance({ themeId: item.id });
-              }}
-            >
-              <span
-                className="theme-card__swatch"
-                style={{
-                  background: `linear-gradient(135deg, ${item.colors.appBackground}, ${item.colors.accent})`,
-                }}
-              />
-              <span className="theme-card__meta">
-                <span className="theme-card__name">{item.name}</span>
-                <span className="theme-card__desc">{item.description}</span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function SettingsPanel() {
-  const settings = useSettingsStore((s) => s.settings);
-  const patchAppearance = useSettingsStore((s) => s.patchAppearance);
-
-  return (
-    <section className="panel settings-panel" aria-label="Settings">
-      <p className="panel__intro">
-        Appearance essentials for now. Library import uses your local folders
-        with no account required.
-      </p>
-      <div className="settings-stack">
-        <label className="settings-field">
-          <span>Density</span>
-          <select
-            value={settings.appearance.density}
-            onChange={(event) => {
-              const density = event.target.value as
-                | "compact"
-                | "comfortable"
-                | "spacious";
-              void patchAppearance({ density });
-            }}
-          >
-            <option value="compact">Compact</option>
-            <option value="comfortable">Comfortable</option>
-            <option value="spacious">Spacious</option>
-          </select>
-        </label>
-        <label className="settings-field">
-          <span>Reduced motion</span>
-          <select
-            value={settings.appearance.reducedMotion}
-            onChange={(event) => {
-              const reducedMotion = event.target.value as
-                | "system"
-                | "reduce"
-                | "no-preference";
-              void patchAppearance({ reducedMotion });
-            }}
-          >
-            <option value="system">Follow system</option>
-            <option value="reduce">Always reduce</option>
-            <option value="no-preference">Prefer motion</option>
-          </select>
-        </label>
-        <p className="settings-note">
-          Privacy defaults: network, analytics, and crash reports are off.
-        </p>
-      </div>
     </section>
   );
 }

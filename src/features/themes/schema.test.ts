@@ -35,5 +35,8 @@ describe("theme schema", () => {
     expect(vars["--color-accent"]).toBe(mistTheme.colors.accent);
     expect(vars["--font-heading"]).toContain("Fraunces");
     expect(vars["--sidebar-width"]).toBe(`${mistTheme.appearance.sidebarWidth}px`);
+    expect(vars["--bg-overlay"]).toBe(String(mistTheme.background.overlayOpacity));
+    expect(vars["--bg-blur"]).toBe(`${mistTheme.background.blur}px`);
   });
 });
+

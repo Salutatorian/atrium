@@ -25,6 +25,56 @@
     radial-gradient(ellipse 50% 40% at 82% 75%, color-mix(in oklab, var(--color-secondary-accent) 22%, transparent), transparent 72%),
     linear-gradient(160deg, var(--color-app-background), var(--color-raised-background));
   animation: wash-drift calc(28s / max(var(--bg-animation), 0.15)) ease-in-out infinite alternate;
+  filter: brightness(var(--bg-brightness)) saturate(var(--bg-saturation));
+}
+
+.app-atmosphere--solid .app-atmosphere__wash {
+  inset: 0;
+  background: var(--color-app-background);
+  animation: none;
+}
+
+.app-atmosphere--none .app-atmosphere__wash {
+  inset: 0;
+  background: var(--color-app-background);
+  animation: none;
+}
+
+.app-atmosphere--none .app-atmosphere__grain,
+.app-atmosphere--none .app-atmosphere__vignette,
+.app-atmosphere--none .app-atmosphere__overlay {
+  opacity: 0;
+}
+
+.app-atmosphere__image {
+  position: absolute;
+  inset: -8%;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: blur(var(--bg-blur)) brightness(calc(1 - var(--bg-darkness))) saturate(var(--bg-saturation));
+  transform: scale(1.08);
+}
+
+.app-atmosphere__image--blurred {
+  filter: blur(max(24px, var(--bg-blur))) brightness(calc(0.85 - var(--bg-darkness))) saturate(var(--bg-saturation));
+}
+
+.app-atmosphere__image--ambient {
+  opacity: 0.55;
+  filter: blur(max(40px, var(--bg-blur))) brightness(calc(0.9 - var(--bg-darkness))) saturate(calc(var(--bg-saturation) * 1.15));
+}
+
+.app-atmosphere--album-gradient .app-atmosphere__wash {
+  background:
+    linear-gradient(160deg, color-mix(in oklab, var(--color-accent) 35%, var(--color-app-background)), var(--color-raised-background)),
+    radial-gradient(ellipse 60% 50% at 50% 40%, color-mix(in oklab, var(--color-secondary-accent) 30%, transparent), transparent 70%);
+}
+
+.app-atmosphere__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / var(--bg-overlay));
 }
 
 .app-atmosphere__grain {
@@ -39,6 +89,71 @@
   position: absolute;
   inset: 0;
   background: radial-gradient(ellipse at center, transparent 45%, rgb(0 0 0 / calc(var(--bg-vignette) * 0.55)) 100%);
+}
+
+.shell-mode-mini .app-shell__layout {
+  display: none;
+}
+
+.shell-mode-immersive {
+  --player-offset: calc(28px * var(--spacing-scale));
+}
+
+.immersive-stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  gap: 1.5rem;
+  height: 100%;
+  min-height: 0;
+  padding: 2rem 2rem calc(120px + var(--player-offset));
+  text-align: center;
+}
+
+.immersive-stage__exit {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  border: 0;
+  border-radius: var(--radius-button);
+  padding: 0.45rem 0.9rem;
+  background: color-mix(in oklab, var(--color-surface) 88%, transparent);
+  color: var(--color-primary-text);
+  backdrop-filter: blur(var(--blur-strength));
+}
+
+.immersive-stage__art-wrap {
+  width: min(42vh, 360px);
+  aspect-ratio: 1;
+}
+
+.immersive-stage__art {
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--radius-artwork) * 1.2);
+  object-fit: cover;
+  box-shadow:
+    0 24px 60px rgb(0 0 0 / calc(var(--shadow-strength) * 0.35)),
+    0 0 0 1px var(--color-border);
+}
+
+.immersive-stage__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: var(--font-weight-heading);
+}
+
+.immersive-stage__artist,
+.immersive-stage__hint {
+  margin: 0.35rem 0 0;
+  color: var(--color-secondary-text);
+}
+
+.immersive-stage__hint {
+  color: var(--color-muted-text);
+  font-size: 0.85rem;
 }
 
 .app-shell__layout {
@@ -333,6 +448,46 @@
   font-size: 0.85rem;
 }
 
+.themes-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 0.75rem;
+}
+
+.themes-status {
+  margin: 0 0 0.75rem;
+  color: var(--color-secondary-text);
+  font-size: 0.9rem;
+}
+
+.themes-status--error {
+  color: var(--color-danger);
+}
+
+.theme-editor {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-divider);
+}
+
+.theme-editor__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: var(--font-weight-heading);
+}
+
+.theme-editor__hint {
+  margin: 0.35rem 0 1rem;
+  color: var(--color-muted-text);
+  font-size: 0.9rem;
+}
+
+.theme-card__remove {
+  margin-top: 0.35rem;
+}
+
 .settings-stack {
   display: grid;
   gap: 0.9rem;
@@ -343,6 +498,15 @@
 .settings-field {
   display: grid;
   gap: 0.35rem;
+}
+
+.settings-field--checkbox {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.settings-field input[type="range"] {
+  width: 100%;
 }
 
 .settings-field select {
@@ -453,6 +617,22 @@
 .player-bar--full-width {
   width: calc(100% - 2 * var(--shell-gap));
   border-radius: var(--radius-lg);
+}
+
+.player-bar--mini {
+  width: min(520px, calc(100% - 2 * var(--shell-gap)));
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  min-height: 64px;
+}
+
+.player-bar--mini .player-bar__timeline,
+.player-bar--mini .player-bar__extras .volume-control input {
+  display: none;
+}
+
+.player-bar--immersive {
+  width: min(920px, calc(100% - 2 * var(--shell-gap)));
 }
 
 .player-bar--alive {
@@ -731,9 +911,9 @@
 .track-row {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) auto;
-  gap: 0.75rem;
+  gap: var(--density-list-gap);
   align-items: center;
-  padding: 0.35rem 0.4rem;
+  padding: calc(0.3rem * var(--spacing-scale)) 0.4rem;
   border-radius: var(--radius-sm);
 }
 

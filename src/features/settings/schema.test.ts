@@ -42,4 +42,28 @@ describe("settings schema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("accepts shell modes and player bar styles", () => {
+    const settings = validateSettings({
+      ...defaultSettings,
+      appearance: {
+        ...defaultSettings.appearance,
+        shellMode: "immersive",
+        playerBarStyle: "full-width",
+      },
+    });
+    expect(settings.appearance.shellMode).toBe("immersive");
+    expect(settings.appearance.playerBarStyle).toBe("full-width");
+  });
+
+  it("rejects invalid shell mode", () => {
+    const result = safeParseSettings({
+      ...defaultSettings,
+      appearance: {
+        ...defaultSettings.appearance,
+        shellMode: "cinema",
+      },
+    });
+    expect(result.success).toBe(false);
+  });
 });
