@@ -179,6 +179,8 @@ mod tests {
             album: None,
             duration_ms: Some(180_000),
             artwork_cache_key: None,
+            replaygain_track_gain: None,
+            replaygain_album_gain: None,
         }
     }
 

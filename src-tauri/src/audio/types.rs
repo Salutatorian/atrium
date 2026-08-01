@@ -28,6 +28,10 @@ pub struct QueueTrack {
     pub album: Option<String>,
     pub duration_ms: Option<i64>,
     pub artwork_cache_key: Option<String>,
+    #[serde(default)]
+    pub replaygain_track_gain: Option<f32>,
+    #[serde(default)]
+    pub replaygain_album_gain: Option<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

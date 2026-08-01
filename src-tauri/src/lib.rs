@@ -35,6 +35,7 @@ pub fn run() {
             let app_settings = settings::load_or_default(&data_dir)?;
             let initial_volume = app_settings.playback.default_volume as f32;
             let player = PlayerEngine::start(app.handle().clone(), initial_volume)?;
+            player.apply_playback_settings(&app_settings.playback);
 
             app.manage(AppState::new(data_dir, db, app_settings, player));
 
@@ -61,6 +62,20 @@ pub fn run() {
             commands::list_library_folders,
             commands::get_artwork_path,
             commands::rescan_library,
+            commands::get_library_track,
+            commands::update_library_track_tags,
+            commands::playlists_list,
+            commands::playlists_create,
+            commands::playlists_rename,
+            commands::playlists_delete,
+            commands::playlists_list_tracks,
+            commands::playlists_add_tracks,
+            commands::playlists_remove_track,
+            commands::smart_playlists_list,
+            commands::smart_playlists_create,
+            commands::smart_playlists_update,
+            commands::smart_playlists_delete,
+            commands::smart_playlists_list_tracks,
             commands::player_get_state,
             commands::player_play,
             commands::player_pause,

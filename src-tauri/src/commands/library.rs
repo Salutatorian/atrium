@@ -5,8 +5,8 @@ use crate::library::models::{
     ScanJobSummary, TrackSummary,
 };
 use crate::library::repository::{
-    library_stats, list_albums, list_artists, list_folders, list_scan_jobs, list_tracks,
-    resolve_artwork_file,
+    get_track_by_id, library_stats, list_albums, list_artists, list_folders, list_scan_jobs,
+    list_tracks, resolve_artwork_file, update_track_tags,
 };
 use crate::library::scanner::classify_drop_paths;
 use serde::Serialize;
@@ -107,6 +107,57 @@ pub fn get_artwork_path(
     let path = resolve_artwork_file(&state.data_dir, &cache_key)
         .map(|p| p.to_string_lossy().to_string());
     Ok(ArtworkPathResponse { path })
+}
+
+#[tauri::command]
+pub fn get_library_track(
+    state: State<'_, AppState>,
+    track_id: i64,
+) -> Result<Option<TrackSummary>, AppError> {
+    let db = state.db.lock();
+    get_track_by_id(&db, &state.data_dir, track_id)
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TagUpdateInput {
+    pub track_id: i64,
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub album_artist: Option<String>,
+    pub genre: Option<String>,
+    pub year: Option<i64>,
+    pub track_number: Option<u32>,
+}
+
+#[tauri::command]
+pub fn update_library_track_tags(
+    state: State<'_, AppState>,
+    input: TagUpdateInput,
+) -> Result<TrackSummary, AppError> {
+    if input.track_id <= 0 {
+        return Err(AppError::Message(
+            "Only library tracks can be tag-edited".into(),
+        ));
+    }
+    let db = state.db.lock();
+    update_track_tags(
+        &db,
+        &state.data_dir,
+        input.track_id,
+        input.title.as_deref().map(str::trim).filter(|s| !s.is_empty()),
+        input.artist.as_deref().map(str::trim).filter(|s| !s.is_empty()),
+        input.album.as_deref().map(str::trim).filter(|s| !s.is_empty()),
+        input
+            .album_artist
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty()),
+        input.genre.as_deref().map(str::trim).filter(|s| !s.is_empty()),
+        input.year,
+        input.track_number,
+    )
 }
 
 #[tauri::command]

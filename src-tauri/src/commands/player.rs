@@ -129,6 +129,8 @@ pub fn player_play_paths(
                 album: None,
                 duration_ms: None,
                 artwork_cache_key: None,
+                replaygain_track_gain: None,
+                replaygain_album_gain: None,
             }
         })
         .collect();

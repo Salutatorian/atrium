@@ -132,6 +132,30 @@ export async function onLibraryUpdated(
   return listen("library://updated", () => handler());
 }
 
+export async function fetchLibraryTrack(
+  trackId: number,
+): Promise<TrackSummary | null> {
+  if (!isTauriRuntime() || trackId <= 0) return null;
+  return invoke<TrackSummary | null>("get_library_track", { trackId });
+}
+
+export type TagUpdateInput = {
+  trackId: number;
+  title?: string | null;
+  artist?: string | null;
+  album?: string | null;
+  albumArtist?: string | null;
+  genre?: string | null;
+  year?: number | null;
+  trackNumber?: number | null;
+};
+
+export async function updateLibraryTrackTags(
+  input: TagUpdateInput,
+): Promise<TrackSummary> {
+  return invoke<TrackSummary>("update_library_track_tags", { input });
+}
+
 export function formatDuration(ms?: number | null): string {
   if (!ms || ms < 0) return "—:—";
   const totalSeconds = Math.floor(ms / 1000);

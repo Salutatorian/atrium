@@ -21,7 +21,7 @@ export async function fetchAppInfo(): Promise<AppInfo> {
       appId: "com.atrium.player",
       version: "0.1.0",
       dataDir: "(browser preview)",
-      phase: "2-library",
+      phase: "6-advanced",
     };
   }
   return invoke<AppInfo>("get_app_info");

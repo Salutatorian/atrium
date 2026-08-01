@@ -1,3 +1,4 @@
+use crate::audio::dsp::parse_replaygain_db;
 use crate::error::AppError;
 use crate::library::extensions::normalize_extension;
 use crate::library::models::ParsedTrack;
@@ -5,6 +6,7 @@ use lofty::file::{AudioFile, TaggedFileExt};
 use lofty::picture::PictureType;
 use lofty::prelude::*;
 use lofty::probe::Probe;
+use lofty::tag::ItemKey;
 use std::fs;
 use std::path::Path;
 use std::time::SystemTime;
@@ -37,6 +39,10 @@ pub fn parse_audio_file(path: &Path) -> Result<ParsedTrack, AppError> {
     let mut artwork_bytes = None;
     let mut artwork_mime = None;
     let mut has_lyrics = false;
+    let mut replaygain_track_gain = None;
+    let mut replaygain_album_gain = None;
+    let mut replaygain_track_peak = None;
+    let mut replaygain_album_peak = None;
 
     let (
         title,
@@ -53,6 +59,18 @@ pub fn parse_audio_file(path: &Path) -> Result<ParsedTrack, AppError> {
         comment,
     ) = if let Some(tag) = tag {
         has_lyrics = tag.get_string(ItemKey::Lyrics).is_some();
+        replaygain_track_gain = tag
+            .get_string(ItemKey::ReplayGainTrackGain)
+            .and_then(parse_replaygain_db);
+        replaygain_album_gain = tag
+            .get_string(ItemKey::ReplayGainAlbumGain)
+            .and_then(parse_replaygain_db);
+        replaygain_track_peak = tag
+            .get_string(ItemKey::ReplayGainTrackPeak)
+            .and_then(|v| v.trim().parse().ok());
+        replaygain_album_peak = tag
+            .get_string(ItemKey::ReplayGainAlbumPeak)
+            .and_then(|v| v.trim().parse().ok());
 
         if let Some(picture) = pick_cover(tag.pictures()) {
             artwork_bytes = Some(picture.data().to_vec());
@@ -125,9 +143,67 @@ pub fn parse_audio_file(path: &Path) -> Result<ParsedTrack, AppError> {
         codec: Some(codec),
         container: Some(normalize_extension(path)),
         has_lyrics,
+        replaygain_track_gain,
+        replaygain_album_gain,
+        replaygain_track_peak,
+        replaygain_album_peak,
         artwork_bytes,
         artwork_mime,
     })
+}
+
+pub fn write_basic_tags(
+    path: &Path,
+    title: Option<&str>,
+    artist: Option<&str>,
+    album: Option<&str>,
+    album_artist: Option<&str>,
+    genre: Option<&str>,
+    year: Option<i64>,
+    track_number: Option<u32>,
+) -> Result<(), AppError> {
+    use lofty::tag::Tag;
+
+    let mut tagged = Probe::open(path)
+        .map_err(|e| AppError::Message(format!("Failed to open {}: {e}", path.display())))?
+        .read()
+        .map_err(|e| AppError::Message(format!("Failed to read {}: {e}", path.display())))?;
+
+    let tag = if let Some(existing) = tagged.primary_tag_mut() {
+        existing
+    } else {
+        tagged.insert_tag(Tag::new(tagged.primary_tag_type()));
+        tagged
+            .primary_tag_mut()
+            .ok_or_else(|| AppError::Message("Unable to create tag".into()))?
+    };
+
+    if let Some(title) = title {
+        tag.set_title(title.to_string());
+    }
+    if let Some(artist) = artist {
+        tag.set_artist(artist.to_string());
+    }
+    if let Some(album) = album {
+        tag.set_album(album.to_string());
+    }
+    if let Some(album_artist) = album_artist {
+        tag.insert_text(ItemKey::AlbumArtist, album_artist.to_string());
+    }
+    if let Some(genre) = genre {
+        tag.set_genre(genre.to_string());
+    }
+    if let Some(year) = year {
+        tag.insert_text(ItemKey::Year, year.to_string());
+    }
+    if let Some(track_number) = track_number {
+        tag.set_track(track_number);
+    }
+
+    tagged
+        .save_to_path(path, lofty::config::WriteOptions::default())
+        .map_err(|e| AppError::Message(format!("Failed to write tags: {e}")))?;
+    Ok(())
 }
 
 fn pick_cover(pictures: &[lofty::picture::Picture]) -> Option<&lofty::picture::Picture> {

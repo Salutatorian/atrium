@@ -120,8 +120,11 @@ pub fn upsert_parsed_track(
                 disc_number = ?6, disc_total = ?7, track_number = ?8, track_total = ?9, genre = ?10,
                 year = ?11, composer = ?12, comment = ?13, codec = ?14, container = ?15,
                 bitrate = ?16, sample_rate = ?17, bit_depth = ?18, channels = ?19, duration_ms = ?20,
-                has_lyrics = ?21, has_artwork = ?22, missing = 0, last_scanned_at = datetime('now')
-             WHERE id = ?23",
+                has_lyrics = ?21, has_artwork = ?22,
+                replaygain_track_gain = ?23, replaygain_album_gain = ?24,
+                replaygain_track_peak = ?25, replaygain_album_peak = ?26,
+                missing = 0, last_scanned_at = datetime('now')
+             WHERE id = ?27",
             params![
                 album_id,
                 parsed.title,
@@ -145,6 +148,10 @@ pub fn upsert_parsed_track(
                 parsed.duration_ms,
                 parsed.has_lyrics as i64,
                 artwork_cache_key.is_some() as i64,
+                parsed.replaygain_track_gain.map(|v| v as f64),
+                parsed.replaygain_album_gain.map(|v| v as f64),
+                parsed.replaygain_track_peak.map(|v| v as f64),
+                parsed.replaygain_album_peak.map(|v| v as f64),
                 id
             ],
         )?;
@@ -156,10 +163,12 @@ pub fn upsert_parsed_track(
                 track_uid, file_id, album_id, title, sort_title, artist, album_artist, album,
                 disc_number, disc_total, track_number, track_total, genre, year, composer, comment,
                 codec, container, bitrate, sample_rate, bit_depth, channels, duration_ms,
-                has_lyrics, has_artwork, missing, last_scanned_at
+                has_lyrics, has_artwork,
+                replaygain_track_gain, replaygain_album_gain, replaygain_track_peak, replaygain_album_peak,
+                missing, last_scanned_at
              ) VALUES (
                 ?1, ?2, ?3, ?4, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
-                ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, 0, datetime('now')
+                ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, 0, datetime('now')
              )",
             params![
                 track_uid,
@@ -185,7 +194,11 @@ pub fn upsert_parsed_track(
                 parsed.channels,
                 parsed.duration_ms,
                 parsed.has_lyrics as i64,
-                artwork_cache_key.is_some() as i64
+                artwork_cache_key.is_some() as i64,
+                parsed.replaygain_track_gain.map(|v| v as f64),
+                parsed.replaygain_album_gain.map(|v| v as f64),
+                parsed.replaygain_track_peak.map(|v| v as f64),
+                parsed.replaygain_album_peak.map(|v| v as f64),
             ],
         )?;
         conn.last_insert_rowid()
@@ -498,7 +511,8 @@ pub fn tracks_by_ids(db: &Database, track_ids: &[i64]) -> Result<Vec<QueueTrack>
     for id in track_ids {
         let row = conn
             .query_row(
-                "SELECT t.id, f.path, t.title, t.artist, t.album, t.duration_ms, a.cache_key
+                "SELECT t.id, f.path, t.title, t.artist, t.album, t.duration_ms, a.cache_key,
+                        t.replaygain_track_gain, t.replaygain_album_gain
                  FROM tracks t
                  JOIN files f ON f.id = t.file_id
                  LEFT JOIN albums al ON al.id = t.album_id
@@ -514,6 +528,12 @@ pub fn tracks_by_ids(db: &Database, track_ids: &[i64]) -> Result<Vec<QueueTrack>
                         album: row.get(4)?,
                         duration_ms: row.get(5)?,
                         artwork_cache_key: row.get(6)?,
+                        replaygain_track_gain: row
+                            .get::<_, Option<f64>>(7)?
+                            .map(|v| v as f32),
+                        replaygain_album_gain: row
+                            .get::<_, Option<f64>>(8)?
+                            .map(|v| v as f32),
                     })
                 },
             )
@@ -678,7 +698,7 @@ fn upsert_fts(
     Ok(())
 }
 
-fn map_track_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<TrackSummary> {
+pub(crate) fn map_track_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<TrackSummary> {
     Ok(TrackSummary {
         id: row.get(0)?,
         track_uid: row.get(1)?,
@@ -697,7 +717,10 @@ fn map_track_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<TrackSummary> {
     })
 }
 
-fn decorate_artwork_paths(data_dir: &Path, mut items: Vec<TrackSummary>) -> Vec<TrackSummary> {
+pub(crate) fn decorate_artwork_paths(
+    data_dir: &Path,
+    mut items: Vec<TrackSummary>,
+) -> Vec<TrackSummary> {
     for item in &mut items {
         if let Some(key) = &item.artwork_cache_key {
             if resolve_artwork_file(data_dir, key).is_none() {
@@ -707,6 +730,69 @@ fn decorate_artwork_paths(data_dir: &Path, mut items: Vec<TrackSummary>) -> Vec<
         }
     }
     items
+}
+
+pub fn get_track_by_id(
+    db: &Database,
+    data_dir: &Path,
+    track_id: i64,
+) -> Result<Option<TrackSummary>, AppError> {
+    let conn = db.conn();
+    let mut stmt = conn.prepare(
+        "SELECT t.id, t.track_uid, f.path, t.title, t.artist, t.album, t.album_artist, t.genre,
+                t.year, t.track_number, t.duration_ms, t.has_artwork, a.cache_key, t.date_added
+         FROM tracks t
+         JOIN files f ON f.id = t.file_id
+         LEFT JOIN albums al ON al.id = t.album_id
+         LEFT JOIN artwork a ON a.id = al.artwork_id
+         WHERE t.id = ?1 AND t.missing = 0",
+    )?;
+    let track = stmt
+        .query_row(params![track_id], |row| map_track_row(row))
+        .optional()?;
+    Ok(track.map(|t| {
+        decorate_artwork_paths(data_dir, vec![t])
+            .into_iter()
+            .next()
+            .expect("decorated track")
+    }))
+}
+
+pub fn update_track_tags(
+    db: &Database,
+    data_dir: &Path,
+    track_id: i64,
+    title: Option<&str>,
+    artist: Option<&str>,
+    album: Option<&str>,
+    album_artist: Option<&str>,
+    genre: Option<&str>,
+    year: Option<i64>,
+    track_number: Option<u32>,
+) -> Result<TrackSummary, AppError> {
+    use crate::library::metadata::{parse_audio_file, write_basic_tags};
+    use std::path::PathBuf;
+
+    let path: String = db.conn().query_row(
+        "SELECT f.path FROM tracks t JOIN files f ON f.id = t.file_id WHERE t.id = ?1",
+        params![track_id],
+        |row| row.get(0),
+    )?;
+    let path_buf = PathBuf::from(&path);
+    write_basic_tags(
+        &path_buf,
+        title,
+        artist,
+        album,
+        album_artist,
+        genre,
+        year,
+        track_number,
+    )?;
+    let parsed = parse_audio_file(&path_buf)?;
+    upsert_parsed_track(db, data_dir, &parsed)?;
+    get_track_by_id(db, data_dir, track_id)?
+        .ok_or_else(|| AppError::Message("Track missing after tag write".into()))
 }
 
 fn build_fts_query(input: &str) -> String {

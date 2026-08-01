@@ -6,10 +6,11 @@ use crate::audio::types::{
 };
 use crate::error::AppError;
 use crate::events::{PLAYER_ERROR, PLAYER_POSITION, PLAYER_QUEUE_CHANGED, PLAYER_TRACK_CHANGED};
+use crate::settings::PlaybackSettings;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use parking_lot::Mutex;
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -46,16 +47,24 @@ struct SharedPlayerState {
     duration_ms: AtomicU64,
     volume: Mutex<f32>,
     muted: AtomicBool,
+    /// 0 = off, 1 = track, 2 = album
+    replay_gain_mode: AtomicU8,
+    crossfade_ms: AtomicU64,
 }
 
 pub struct PlayerEngine {
     commands: Sender<PlayerCommand>,
     state: Arc<SharedPlayerState>,
+    buffer: Arc<SharedBuffer>,
 }
 
 impl PlayerEngine {
     pub fn start(app: AppHandle, initial_volume: f32) -> Result<Self, AppError> {
         let (tx, rx) = unbounded();
+        let buffer = SharedBuffer::new();
+        buffer
+            .volume
+            .store(f32::to_bits(initial_volume.clamp(0.0, 1.0)), Ordering::Relaxed);
         let state = Arc::new(SharedPlayerState {
             status: Mutex::new(PlayerStatus::Stopped),
             current: Mutex::new(None),
@@ -64,13 +73,18 @@ impl PlayerEngine {
             duration_ms: AtomicU64::new(0),
             volume: Mutex::new(initial_volume.clamp(0.0, 1.0)),
             muted: AtomicBool::new(false),
+            replay_gain_mode: AtomicU8::new(0),
+            crossfade_ms: AtomicU64::new(0),
         });
 
         let worker_state = Arc::clone(&state);
+        let worker_buffer = Arc::clone(&buffer);
         thread::Builder::new()
             .name("atrium-audio".into())
             .spawn(move || {
-                if let Err(err) = run_player_worker(app, worker_state, rx, initial_volume) {
+                if let Err(err) =
+                    run_player_worker(app, worker_state, worker_buffer, rx, initial_volume)
+                {
                     eprintln!("Audio worker stopped: {err}");
                 }
             })
@@ -79,7 +93,35 @@ impl PlayerEngine {
         Ok(Self {
             commands: tx,
             state,
+            buffer,
         })
+    }
+
+    pub fn apply_playback_settings(&self, settings: &PlaybackSettings) {
+        self.buffer.dsp.set_preamp_db(settings.preamp_db as f32);
+        self.buffer.dsp.set_eq(
+            settings.eq_enabled,
+            settings.eq_bass_db as f32,
+            settings.eq_mid_db as f32,
+            settings.eq_treble_db as f32,
+        );
+        let mode = match settings.replay_gain_mode.as_str() {
+            "track" => 1,
+            "album" => 2,
+            _ => 0,
+        };
+        self.state.replay_gain_mode.store(mode, Ordering::Relaxed);
+        let crossfade_ms = if settings.crossfade_enabled {
+            u64::from(settings.crossfade_seconds) * 1000
+        } else {
+            0
+        };
+        self.state
+            .crossfade_ms
+            .store(crossfade_ms, Ordering::Relaxed);
+        if let Some(track) = self.state.current.lock().clone() {
+            apply_track_gain(&self.buffer, &self.state, &track);
+        }
     }
 
     pub fn snapshot(&self) -> PlayerSnapshot {
@@ -179,10 +221,10 @@ impl PlayerEngine {
 fn run_player_worker(
     app: AppHandle,
     state: Arc<SharedPlayerState>,
+    buffer: Arc<SharedBuffer>,
     rx: Receiver<PlayerCommand>,
     initial_volume: f32,
 ) -> Result<(), AppError> {
-    let buffer = SharedBuffer::new();
     buffer
         .volume
         .store(f32::to_bits(initial_volume.clamp(0.0, 1.0)), Ordering::Relaxed);
@@ -228,6 +270,7 @@ fn run_player_worker(
                             &mut decode_origin_ms,
                             &mut decoded_frames,
                             &source_rate,
+                            true,
                         )?;
                     } else {
                         playing = false;
@@ -268,6 +311,7 @@ fn run_player_worker(
                             &mut decode_origin_ms,
                             &mut decoded_frames,
                             &source_rate,
+                            true,
                         )?;
                     } else {
                         playing = true;
@@ -298,6 +342,7 @@ fn run_player_worker(
                             &mut decode_origin_ms,
                             &mut decoded_frames,
                             &source_rate,
+                            true,
                         )?;
                     } else {
                         playing = false;
@@ -326,6 +371,7 @@ fn run_player_worker(
                             &mut decode_origin_ms,
                             &mut decoded_frames,
                             &source_rate,
+                            true,
                         )?;
                     }
                 }
@@ -386,9 +432,20 @@ fn run_player_worker(
                             buffer.push(&converted);
                         }
                         Ok(None) => {
-                            // Track finished — advance for gapless-style transition.
+                            // Track finished — advance (optional short crossfade).
                             let next = state.queue.lock().next_index(false);
                             if next.is_some() {
+                                let fade_ms = state.crossfade_ms.load(Ordering::Relaxed);
+                                let clear = fade_ms == 0;
+                                if fade_ms > 0 {
+                                    let samples = ((out_rate as u64)
+                                        .saturating_mul(fade_ms)
+                                        / 1000
+                                        * out_channels as u64)
+                                        .min(u32::MAX as u64)
+                                        as u32;
+                                    buffer.dsp.begin_fade_out(samples.max(1));
+                                }
                                 playing = load_current(
                                     &app,
                                     &state,
@@ -397,7 +454,17 @@ fn run_player_worker(
                                     &mut decode_origin_ms,
                                     &mut decoded_frames,
                                     &source_rate,
+                                    clear,
                                 )?;
+                                if fade_ms > 0 && playing {
+                                    let samples = ((out_rate as u64)
+                                        .saturating_mul(fade_ms)
+                                        / 1000
+                                        * out_channels as u64)
+                                        .min(u32::MAX as u64)
+                                        as u32;
+                                    buffer.dsp.begin_fade_in(samples.max(1));
+                                }
                             } else {
                                 playing = false;
                                 decoder = None;
@@ -416,6 +483,7 @@ fn run_player_worker(
                                     &mut decode_origin_ms,
                                     &mut decoded_frames,
                                     &source_rate,
+                                    true,
                                 )?;
                             } else {
                                 playing = false;
@@ -456,8 +524,11 @@ fn load_current(
     decode_origin_ms: &mut u64,
     decoded_frames: &mut u64,
     source_rate: &AtomicU64,
+    clear_buffer: bool,
 ) -> Result<bool, AppError> {
-    buffer.clear();
+    if clear_buffer {
+        buffer.clear();
+    }
     *decode_origin_ms = 0;
     *decoded_frames = 0;
     state.position_ms.store(0, Ordering::Relaxed);
@@ -485,6 +556,7 @@ fn load_current(
                 active.duration_ms()
             };
             state.duration_ms.store(duration, Ordering::Relaxed);
+            apply_track_gain(buffer, state, &track);
             *state.current.lock() = Some(track);
             *state.status.lock() = PlayerStatus::Playing;
             *decoder = Some(active);
@@ -498,6 +570,18 @@ fn load_current(
             Ok(false)
         }
     }
+}
+
+fn apply_track_gain(buffer: &SharedBuffer, state: &SharedPlayerState, track: &QueueTrack) {
+    let mode = state.replay_gain_mode.load(Ordering::Relaxed);
+    let gain = match mode {
+        1 => track.replaygain_track_gain,
+        2 => track
+            .replaygain_album_gain
+            .or(track.replaygain_track_gain),
+        _ => None,
+    };
+    buffer.dsp.set_track_gain_db(gain);
 }
 
 fn emit_track_changed(app: &AppHandle, state: &SharedPlayerState) {

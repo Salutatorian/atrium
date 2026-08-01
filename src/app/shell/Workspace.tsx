@@ -7,6 +7,8 @@ import {
   SongsPage,
 } from "../../features/library/LibraryPages";
 import { LibraryToolbar } from "../../features/library/LibraryToolbar";
+import { PlaylistsPage } from "../../features/playlists/PlaylistsPage";
+import { SmartPlaylistsPage } from "../../features/playlists/SmartPlaylistsPage";
 import { SettingsPanel } from "../../features/settings/SettingsPanel";
 import { ThemesStudio } from "../../features/themes/ThemesStudio";
 import { useLibraryStore } from "../../stores/library-store";
@@ -45,11 +47,11 @@ export function Workspace() {
         {activeNav === "artists" ? <ArtistsPage /> : null}
         {activeNav === "folders" ? <FoldersPage /> : null}
         {activeNav === "recently-added" ? <RecentlyAddedPage /> : null}
+        {activeNav === "playlists" ? <PlaylistsPage /> : null}
+        {activeNav === "smart-playlists" ? <SmartPlaylistsPage /> : null}
         {activeNav === "themes" ? <ThemesStudio /> : null}
         {activeNav === "settings" ? <SettingsPanel /> : null}
-        {activeNav === "playlists" ||
-        activeNav === "smart-playlists" ||
-        activeNav === "recently-played" ||
+        {activeNav === "recently-played" ||
         activeNav === "favorites" ||
         activeNav === "history" ? (
           <EmptyLibraryPanel section={titles[activeNav]} />

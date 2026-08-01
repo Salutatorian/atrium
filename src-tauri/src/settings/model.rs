@@ -40,6 +40,30 @@ pub struct PlaybackSettings {
     pub remember_volume: bool,
     pub autoplay_on_drop: bool,
     pub seek_step_seconds: u32,
+    #[serde(default = "default_rg_mode")]
+    pub replay_gain_mode: String,
+    #[serde(default)]
+    pub preamp_db: f64,
+    #[serde(default)]
+    pub eq_enabled: bool,
+    #[serde(default)]
+    pub eq_bass_db: f64,
+    #[serde(default)]
+    pub eq_mid_db: f64,
+    #[serde(default)]
+    pub eq_treble_db: f64,
+    #[serde(default)]
+    pub crossfade_enabled: bool,
+    #[serde(default = "default_crossfade_seconds")]
+    pub crossfade_seconds: u32,
+}
+
+fn default_rg_mode() -> String {
+    "off".into()
+}
+
+fn default_crossfade_seconds() -> u32 {
+    3
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -102,6 +126,14 @@ impl Default for AppSettings {
                 remember_volume: true,
                 autoplay_on_drop: true,
                 seek_step_seconds: 5,
+                replay_gain_mode: "off".into(),
+                preamp_db: 0.0,
+                eq_enabled: false,
+                eq_bass_db: 0.0,
+                eq_mid_db: 0.0,
+                eq_treble_db: 0.0,
+                crossfade_enabled: false,
+                crossfade_seconds: 3,
             },
             appearance: AppearanceSettings {
                 theme_id: "atrium-mist".into(),
@@ -140,6 +172,26 @@ impl AppSettings {
         if !(0.0..=1.0).contains(&self.playback.default_volume) {
             return Err(AppError::Message(
                 "playback.defaultVolume must be between 0 and 1".into(),
+            ));
+        }
+        let rg = self.playback.replay_gain_mode.as_str();
+        if !matches!(rg, "off" | "track" | "album") {
+            return Err(AppError::Message(
+                "playback.replayGainMode must be off, track, or album".into(),
+            ));
+        }
+        if !(-24.0..=24.0).contains(&self.playback.preamp_db)
+            || !(-12.0..=12.0).contains(&self.playback.eq_bass_db)
+            || !(-12.0..=12.0).contains(&self.playback.eq_mid_db)
+            || !(-12.0..=12.0).contains(&self.playback.eq_treble_db)
+        {
+            return Err(AppError::Message(
+                "playback EQ/preamp values are out of range".into(),
+            ));
+        }
+        if self.playback.crossfade_seconds > 12 {
+            return Err(AppError::Message(
+                "playback.crossfadeSeconds must be <= 12".into(),
             ));
         }
         if self.library.max_recursion_depth == 0 || self.library.max_recursion_depth > 256 {

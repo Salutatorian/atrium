@@ -15,6 +15,7 @@ pub fn update_settings(
 ) -> Result<AppSettings, AppError> {
     settings.validate()?;
     settings::save(&state.data_dir, &settings)?;
+    state.player.apply_playback_settings(&settings.playback);
     *state.settings.lock() = settings.clone();
     Ok(settings)
 }

@@ -66,4 +66,32 @@ describe("settings schema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("accepts playback DSP fields", () => {
+    const settings = validateSettings({
+      ...defaultSettings,
+      playback: {
+        ...defaultSettings.playback,
+        replayGainMode: "track",
+        preampDb: -1.5,
+        eqEnabled: true,
+        eqBassDb: 2,
+        crossfadeEnabled: true,
+        crossfadeSeconds: 4,
+      },
+    });
+    expect(settings.playback.replayGainMode).toBe("track");
+    expect(settings.playback.crossfadeSeconds).toBe(4);
+  });
+
+  it("rejects invalid replay gain mode", () => {
+    const result = safeParseSettings({
+      ...defaultSettings,
+      playback: {
+        ...defaultSettings.playback,
+        replayGainMode: "loud",
+      },
+    });
+    expect(result.success).toBe(false);
+  });
 });

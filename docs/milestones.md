@@ -62,6 +62,11 @@
 
 ## Phase 6 — Advanced
 
-- [ ] EQ, ReplayGain, crossfade
-- [ ] Smart playlists, tag editor
-- [ ] Optional AI lyric drafts, network libraries
+- [x] EQ, ReplayGain, crossfade
+- [x] Smart playlists, tag editor
+- [x] Optional AI lyric drafts, network libraries (stubs / privacy notes)
+
+## Phase 7 — Polish
+
+- [ ] Listening history / favorites depth
+- [ ] Packaging, updater, accessibility pass

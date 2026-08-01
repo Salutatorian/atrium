@@ -9,6 +9,8 @@ export type QueueTrack = {
   album?: string | null;
   durationMs?: number | null;
   artworkCacheKey?: string | null;
+  replaygainTrackGain?: number | null;
+  replaygainAlbumGain?: number | null;
 };
 
 export type PlayerSnapshot = {

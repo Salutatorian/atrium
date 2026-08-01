@@ -47,7 +47,7 @@ Decode on a worker thread; push PCM into the shared buffer consumed by the outpu
 
 Play, pause, resume, stop, previous, next, seek, queue replace / add-next / add-end, shuffle, repeat modes, volume, mute, position events, track transitions, errors.
 
-DSP (later): sample-accurate gapless, crossfade, ReplayGain, preamp, balance, mono, EQ, fades.
+DSP (Phase 6): ReplayGain (track/album), preamp, 3-band EQ, short crossfade on advance. Still later: sample-accurate gapless splice, balance, mono.
 
 ## Events (frontend)
 

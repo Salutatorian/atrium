@@ -1,3 +1,4 @@
+use crate::audio::dsp::{DspControls, EqRuntime};
 use crate::error::AppError;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Device, SampleFormat, Stream, StreamConfig};
@@ -11,6 +12,8 @@ pub struct SharedBuffer {
     samples: Mutex<VecDeque<f32>>,
     pub volume: AtomicU32, // f32 bits
     pub muted: AtomicBool,
+    pub dsp: DspControls,
+    eq: Mutex<EqRuntime>,
 }
 
 impl SharedBuffer {
@@ -19,6 +22,8 @@ impl SharedBuffer {
             samples: Mutex::new(VecDeque::with_capacity(48_000 * 2 * 2)),
             volume: AtomicU32::new(f32::to_bits(0.8)),
             muted: AtomicBool::new(false),
+            dsp: DspControls::new(),
+            eq: Mutex::new(EqRuntime::default()),
         })
     }
 
@@ -42,10 +47,15 @@ impl SharedBuffer {
     fn pop_into(&self, output: &mut [f32]) {
         let muted = self.muted.load(Ordering::Relaxed);
         let volume = f32::from_bits(self.volume.load(Ordering::Relaxed));
+        let mut eq = self.eq.lock();
         let mut guard = self.samples.lock();
         for sample in output.iter_mut() {
             let next = guard.pop_front().unwrap_or(0.0);
-            *sample = if muted { 0.0 } else { next * volume };
+            if muted {
+                *sample = 0.0;
+            } else {
+                *sample = eq.process(next, &self.dsp) * volume;
+            }
         }
     }
 }

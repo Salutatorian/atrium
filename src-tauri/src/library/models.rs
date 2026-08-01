@@ -126,6 +126,10 @@ pub struct ParsedTrack {
     pub codec: Option<String>,
     pub container: Option<String>,
     pub has_lyrics: bool,
+    pub replaygain_track_gain: Option<f32>,
+    pub replaygain_album_gain: Option<f32>,
+    pub replaygain_track_peak: Option<f32>,
+    pub replaygain_album_peak: Option<f32>,
     pub artwork_bytes: Option<Vec<u8>>,
     #[allow(dead_code)]
     pub artwork_mime: Option<String>,

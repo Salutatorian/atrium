@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { TagEditor } from "../../features/library/TagEditor";
 import { LyricsPanel } from "../../features/lyrics/LyricsPanel";
 import { QueuePanel } from "../../features/player/QueuePanel";
 import {
@@ -128,6 +129,9 @@ function TrackDetailsPanel() {
       </p>
     );
   }
+  if (current.trackId > 0) {
+    return <TagEditor trackId={current.trackId} />;
+  }
   return (
     <dl className="track-details">
       <div>
@@ -146,6 +150,9 @@ function TrackDetailsPanel() {
         <dt>Path</dt>
         <dd className="track-details__path">{current.path}</dd>
       </div>
+      <p className="settings-note">
+        Tag editing is available for indexed library tracks.
+      </p>
     </dl>
   );
 }

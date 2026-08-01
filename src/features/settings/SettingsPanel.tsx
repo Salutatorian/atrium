@@ -4,16 +4,126 @@ import type { AppSettings } from "./schema";
 export function SettingsPanel() {
   const settings = useSettingsStore((s) => s.settings);
   const patchAppearance = useSettingsStore((s) => s.patchAppearance);
+  const patchPlayback = useSettingsStore((s) => s.patchPlayback);
   const patchLyrics = useSettingsStore((s) => s.patchLyrics);
   const patchPrivacy = useSettingsStore((s) => s.patchPrivacy);
 
   return (
     <section className="panel settings-panel" aria-label="Settings">
       <p className="panel__intro">
-        Shape the listening room — density, chrome, lyrics display, and privacy
-        gates for network providers.
+        Shape the listening room — playback DSP, density, chrome, lyrics, and
+        privacy gates for network providers.
       </p>
       <div className="settings-stack">
+        <h2 className="settings-section-title">Playback</h2>
+        <label className="settings-field">
+          <span>ReplayGain</span>
+          <select
+            value={settings.playback.replayGainMode}
+            onChange={(event) => {
+              void patchPlayback({
+                replayGainMode: event.target
+                  .value as AppSettings["playback"]["replayGainMode"],
+              });
+            }}
+          >
+            <option value="off">Off</option>
+            <option value="track">Track</option>
+            <option value="album">Album</option>
+          </select>
+        </label>
+        <label className="settings-field">
+          <span>Preamp ({settings.playback.preampDb.toFixed(1)} dB)</span>
+          <input
+            type="range"
+            min={-12}
+            max={12}
+            step={0.5}
+            value={settings.playback.preampDb}
+            onChange={(event) => {
+              void patchPlayback({ preampDb: Number(event.target.value) });
+            }}
+          />
+        </label>
+        <label className="settings-field settings-field--checkbox">
+          <span>3-band EQ</span>
+          <input
+            type="checkbox"
+            checked={settings.playback.eqEnabled}
+            onChange={(event) => {
+              void patchPlayback({ eqEnabled: event.target.checked });
+            }}
+          />
+        </label>
+        <label className="settings-field">
+          <span>Bass ({settings.playback.eqBassDb.toFixed(1)} dB)</span>
+          <input
+            type="range"
+            min={-12}
+            max={12}
+            step={0.5}
+            value={settings.playback.eqBassDb}
+            disabled={!settings.playback.eqEnabled}
+            onChange={(event) => {
+              void patchPlayback({ eqBassDb: Number(event.target.value) });
+            }}
+          />
+        </label>
+        <label className="settings-field">
+          <span>Mid ({settings.playback.eqMidDb.toFixed(1)} dB)</span>
+          <input
+            type="range"
+            min={-12}
+            max={12}
+            step={0.5}
+            value={settings.playback.eqMidDb}
+            disabled={!settings.playback.eqEnabled}
+            onChange={(event) => {
+              void patchPlayback({ eqMidDb: Number(event.target.value) });
+            }}
+          />
+        </label>
+        <label className="settings-field">
+          <span>Treble ({settings.playback.eqTrebleDb.toFixed(1)} dB)</span>
+          <input
+            type="range"
+            min={-12}
+            max={12}
+            step={0.5}
+            value={settings.playback.eqTrebleDb}
+            disabled={!settings.playback.eqEnabled}
+            onChange={(event) => {
+              void patchPlayback({ eqTrebleDb: Number(event.target.value) });
+            }}
+          />
+        </label>
+        <label className="settings-field settings-field--checkbox">
+          <span>Crossfade on track change</span>
+          <input
+            type="checkbox"
+            checked={settings.playback.crossfadeEnabled}
+            onChange={(event) => {
+              void patchPlayback({ crossfadeEnabled: event.target.checked });
+            }}
+          />
+        </label>
+        <label className="settings-field">
+          <span>Crossfade ({settings.playback.crossfadeSeconds}s)</span>
+          <input
+            type="range"
+            min={0}
+            max={12}
+            step={1}
+            value={settings.playback.crossfadeSeconds}
+            disabled={!settings.playback.crossfadeEnabled}
+            onChange={(event) => {
+              void patchPlayback({
+                crossfadeSeconds: Number(event.target.value),
+              });
+            }}
+          />
+        </label>
+
         <h2 className="settings-section-title">Appearance</h2>
         <label className="settings-field">
           <span>Density</span>
@@ -174,6 +284,13 @@ export function SettingsPanel() {
         <p className="settings-note">
           Network lyrics stay off until both privacy toggles are enabled.
           Attribution is always shown for remote sources.
+        </p>
+
+        <h2 className="settings-section-title">Advanced (stubs)</h2>
+        <p className="settings-note">
+          AI lyric drafts stay local-only drafts when introduced — never
+          auto-published. Network / NAS libraries are planned as opt-in mounts
+          behind the same privacy gate; Atrium remains offline-first.
         </p>
       </div>
     </section>
