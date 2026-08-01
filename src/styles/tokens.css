@@ -1,0 +1,64 @@
+:root {
+  /* Fallbacks before JS theme application */
+  --color-app-background: #e7ecef;
+  --color-raised-background: #f4f7f8;
+  --color-surface: rgba(255, 255, 255, 0.62);
+  --color-surface-hover: rgba(255, 255, 255, 0.82);
+  --color-surface-active: rgba(232, 244, 242, 0.95);
+  --color-surface-selected: rgba(196, 228, 221, 0.85);
+  --color-primary-text: #1a2428;
+  --color-secondary-text: #42555c;
+  --color-muted-text: #6d8088;
+  --color-accent: #2f8f7b;
+  --color-accent-hover: #247463;
+  --color-accent-text: #f7fffc;
+  --color-secondary-accent: #c9864a;
+  --color-border: rgba(26, 36, 40, 0.08);
+  --color-divider: rgba(26, 36, 40, 0.06);
+  --color-focus-ring: #2f8f7b;
+  --color-progress-track: rgba(26, 36, 40, 0.12);
+  --color-progress-fill: #2f8f7b;
+  --color-artwork-glow: rgba(47, 143, 123, 0.28);
+  --color-tooltip-background: #1a2428;
+  --color-tooltip-text: #f4f7f8;
+  --font-family: "DM Sans Variable", "Segoe UI", sans-serif;
+  --font-heading: "Fraunces Variable", Georgia, serif;
+  --font-size-base: 14px;
+  --font-weight: 450;
+  --font-weight-heading: 560;
+  --letter-spacing: 0.01em;
+  --line-height: 1.45;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-button: 999px;
+  --radius-artwork: 16px;
+  --border-width: 1px;
+  --shadow-strength: 0.35;
+  --blur-strength: 18px;
+  --surface-opacity: 0.72;
+  --spacing-scale: 1;
+  --control-height: 36px;
+  --sidebar-width: 72px;
+  --inspector-width: 320px;
+  --bg-noise: 0.04;
+  --bg-vignette: 0.18;
+  --bg-animation: 0.25;
+  --shell-gap: calc(12px * var(--spacing-scale));
+  --player-offset: calc(18px * var(--spacing-scale));
+}
+
+.density-compact {
+  --spacing-scale: 0.9;
+  --control-height: 32px;
+}
+
+.density-comfortable {
+  --spacing-scale: 1;
+  --control-height: 36px;
+}
+
+.density-spacious {
+  --spacing-scale: 1.12;
+  --control-height: 40px;
+}

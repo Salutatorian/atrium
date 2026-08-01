@@ -1,0 +1,11 @@
+/**
+ * Centralized product identity.
+ * Rename here (and in package/Cargo/tauri config) when the final name is chosen.
+ */
+export const APP_NAME = "Atrium";
+export const APP_ID = "com.atrium.player";
+export const APP_DESCRIPTION =
+  "An offline-first personal music environment for local libraries.";
+export const THEME_FILE_KIND = "atrium-theme";
+export const THEME_FILE_EXTENSION = "atrium-theme.json";
+export const THEME_SCHEMA_VERSION = 1;

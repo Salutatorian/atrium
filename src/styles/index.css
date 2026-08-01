@@ -1,0 +1,125 @@
+@import "tailwindcss";
+@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/fraunces";
+
+@import "./tokens.css";
+@import "./shell.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight);
+  letter-spacing: var(--letter-spacing);
+  line-height: var(--line-height);
+  color: var(--color-primary-text);
+  background: var(--color-app-background);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  z-index: 50;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-button);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+.tooltip-content {
+  z-index: 60;
+  border-radius: var(--radius-sm);
+  background: var(--color-tooltip-background);
+  color: var(--color-tooltip-text);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.78rem;
+  box-shadow: 0 8px 24px rgb(0 0 0 / calc(var(--shadow-strength) * 0.35));
+  animation: tooltip-in 140ms ease;
+}
+
+.tooltip-arrow {
+  fill: var(--color-tooltip-background);
+}
+
+.reduce-motion .tooltip-content,
+.reduce-motion .player-bar--alive,
+.reduce-motion .app-atmosphere__wash,
+.reduce-motion .home-panel__glow {
+  animation: none !important;
+  transition: none !important;
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion="no-preference"]) .tooltip-content,
+  html:not([data-motion="no-preference"]) .player-bar--alive,
+  html:not([data-motion="no-preference"]) .app-atmosphere__wash,
+  html:not([data-motion="no-preference"]) .home-panel__glow {
+    animation: none !important;
+  }
+}
