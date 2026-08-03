@@ -5,6 +5,19 @@ Offline-first, highly customizable desktop music player for Windows, macOS, and 
 
 Atrium is a private listening room for your local music library — not a streaming client, not a cloud account product, and not a boxed desktop database. You own the files, layout, appearance, lyrics, listening data, and settings.
 
+<p align="center">
+  <img src="docs/screenshots/home.png" alt="" width="720" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/liked.png" alt="" width="720" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/stats.png" alt="" width="720" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/lyrics.png" alt="" width="720" />
+</p>
+
 ## Current status
 
 **Phase 0–7** are implemented (MVP milestone complete).
