@@ -1,6 +1,6 @@
 [package]
 name = "atrium"
-version = "1.0.0"
+version = "1.5.0"
 description = "Atrium — offline-first personal music environment"
 authors = ["Atrium contributors"]
 edition = "2021"
@@ -35,6 +35,8 @@ rand = "0.10.2"
 cpal = "0.15.3"
 ureq = { version = "2.12.1", default-features = true, features = ["json"] }
 tauri-plugin-autostart = "2.5.1"
+tauri-plugin-updater = "2.10.1"
+tauri-plugin-process = "2.3.1"
 
 [dev-dependencies]
 tempfile = "3.27.0"

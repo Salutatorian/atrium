@@ -3,6 +3,7 @@ import { IconCollapse, IconExpand } from "../../components/icons";
 import { Tooltip } from "../../components/Tooltip";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useShellStore } from "../../stores/shell-store";
+import { useUpdateStore } from "../../stores/update-store";
 import { cn } from "../../utils/cn";
 import { primaryNav, utilityNav } from "./nav-items";
 
@@ -12,6 +13,9 @@ export function NavRail() {
   const setActiveNav = useShellStore((s) => s.setActiveNav);
   const toggleSidebar = useShellStore((s) => s.toggleSidebar);
   const patchAppearance = useSettingsStore((s) => s.patchAppearance);
+  const updateAvailable = useUpdateStore(
+    (s) => Boolean(s.available) && !s.toastDismissed,
+  );
 
   return (
     <aside
@@ -67,20 +71,27 @@ export function NavRail() {
         <nav className="nav-rail__list" aria-label="Utilities">
           {utilityNav.map((item) => {
             const { Icon } = item;
+            const showBadge = item.id === "settings" && updateAvailable;
             const button = (
               <button
                 type="button"
                 className={cn(
                   "nav-item",
                   activeNav === item.id && "nav-item--active",
+                  showBadge && "nav-item--badge",
                 )}
                 aria-current={activeNav === item.id ? "page" : undefined}
-                aria-label={item.label}
+                aria-label={
+                  showBadge ? `${item.label} (update available)` : item.label
+                }
                 onClick={() => setActiveNav(item.id)}
               >
                 <Icon className="nav-item__icon" />
                 {expanded ? (
                   <span className="nav-item__label">{item.label}</span>
+                ) : null}
+                {showBadge ? (
+                  <span className="nav-item__badge" aria-hidden="true" />
                 ) : null}
               </button>
             );
@@ -90,7 +101,13 @@ export function NavRail() {
                 {expanded ? (
                   button
                 ) : (
-                  <Tooltip label={item.label}>{button}</Tooltip>
+                  <Tooltip
+                    label={
+                      showBadge ? `${item.label} · update available` : item.label
+                    }
+                  >
+                    {button}
+                  </Tooltip>
                 )}
               </div>
             );

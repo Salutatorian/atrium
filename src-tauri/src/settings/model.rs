@@ -28,6 +28,9 @@ pub struct GeneralSettings {
     pub restore_queue: bool,
     pub language: String,
     pub check_for_updates: bool,
+    /// When true, download and install on launch (app may restart quietly).
+    #[serde(default = "default_true")]
+    pub auto_install_updates: bool,
 }
 
 fn default_true() -> bool {
@@ -125,7 +128,8 @@ impl Default for AppSettings {
                 restore_last_page: true,
                 restore_queue: true,
                 language: "system".into(),
-                check_for_updates: false,
+                check_for_updates: true,
+                auto_install_updates: true,
             },
             library: LibrarySettings {
                 watch_folders: false,

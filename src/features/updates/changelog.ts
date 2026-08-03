@@ -40,6 +40,66 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-08-v1-5-0",
+    version: "1.5.0",
+    title: "Atrium 1.5",
+    date: "2026-08-03",
+    summary:
+      "In-app updates, a reliable close-to-tray, and quieter lyrics chrome.",
+    changes: [
+      {
+        kind: "add",
+        text: "In-app updater with settings toggle, gear badge, and release notes toast",
+      },
+      {
+        kind: "fix",
+        text: "Close to system tray actually hides the window and keeps the tray icon",
+      },
+      {
+        kind: "improve",
+        text: "Immersive lyrics chrome stays out of the way until you hover",
+      },
+      {
+        kind: "polish",
+        text: "README screenshots for Home, Liked, Stats, and Lyrics",
+      },
+    ],
+  },
+  {
+    id: "2026-08-v1-0-0",
+    version: "1.0.0",
+    title: "Atrium 1.0",
+    date: "2026-08-01",
+    summary:
+      "First public release — tray, lyrics, library dedupe, and cross-platform installers.",
+    changes: [
+      {
+        kind: "add",
+        text: "Close to system tray and optional launch at login",
+      },
+      {
+        kind: "add",
+        text: "Now Playing lyrics under artwork with pause-follow for covers",
+      },
+      {
+        kind: "add",
+        text: "Duplicate imports merge by content (same song → one library row)",
+      },
+      {
+        kind: "add",
+        text: "Windows, macOS, and Linux installers on GitHub Releases",
+      },
+      {
+        kind: "improve",
+        text: "Cleaner immersive lyrics chrome (controls appear on hover)",
+      },
+      {
+        kind: "fix",
+        text: "Linux release builds include ALSA for audio output",
+      },
+    ],
+  },
+  {
     id: "2026-08-index-in-place",
     version: "0.1.0",
     title: "Library indexes in place",
@@ -141,6 +201,15 @@ export const UPDATE_RELEASES: UpdateRelease[] = [
 
 export function latestRelease(): UpdateRelease | null {
   return UPDATE_RELEASES[0] ?? null;
+}
+
+/** Find the newest changelog entry matching an installed version. */
+export function releaseForVersion(version: string): UpdateRelease | null {
+  const normalized = version.replace(/^v/i, "").trim();
+  return (
+    UPDATE_RELEASES.find((release) => release.version === normalized) ??
+    latestRelease()
+  );
 }
 
 export const SEEN_UPDATES_STORAGE_KEY = "atrium.updates.seenReleaseId";

@@ -12,7 +12,9 @@ export const appSettingsSchema = z.object({
     restoreLastPage: z.boolean(),
     restoreQueue: z.boolean(),
     language: z.string(),
-    checkForUpdates: z.boolean(),
+    checkForUpdates: z.boolean().default(true),
+    /** Quietly download + install on launch when an update is available. */
+    autoInstallUpdates: z.boolean().default(true),
   }),
   library: z.object({
     watchFolders: z.boolean(),
@@ -71,7 +73,8 @@ export const defaultSettings: AppSettings = {
     restoreLastPage: true,
     restoreQueue: true,
     language: "system",
-    checkForUpdates: false,
+    checkForUpdates: true,
+    autoInstallUpdates: true,
   },
   library: {
     watchFolders: false,

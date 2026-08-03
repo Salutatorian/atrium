@@ -4,7 +4,7 @@
 use crate::app::AppState;
 use tauri::{
     menu::{Menu, MenuItem},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager, Runtime,
 };
 
@@ -37,7 +37,9 @@ pub fn setup_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         builder = builder.icon(icon.clone());
     }
 
-    let _tray = builder.build(app)?;
+    // Keep the tray icon alive for the whole process (dropping it removes the icon).
+    let tray: TrayIcon<R> = builder.build(app)?;
+    app.manage(tray);
     Ok(())
 }
 

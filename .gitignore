@@ -15,6 +15,10 @@ dist-ssr
 .env.*
 !.env.example
 
+# Updater private key — never commit
+src-tauri/keys/*.key
+!src-tauri/keys/*.key.pub
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

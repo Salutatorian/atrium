@@ -6,6 +6,9 @@ import { ImmersiveStage } from "../../features/shell/ImmersiveStage";
 import { Atmosphere } from "../../features/themes/Atmosphere";
 import { useListeningRecorder } from "../../features/listening/use-listening-recorder";
 import { YearLookbackAutoOpen } from "../../features/listening/YearLookbackAutoOpen";
+import { PostUpdateDialog } from "../../features/updates/PostUpdateDialog";
+import { UpdateToast } from "../../features/updates/UpdateToast";
+import { useAppUpdater } from "../../features/updates/use-app-updater";
 import { useLibraryEvents } from "../../hooks/use-library-events";
 import { useMediaKeys } from "../../hooks/use-media-keys";
 import { usePlayerEvents } from "../../hooks/use-player-events";
@@ -36,6 +39,7 @@ export function AppShell({ appName }: AppShellProps) {
   useSystemTheme();
   useShellModeKeys();
   useSearchHotkey();
+  useAppUpdater();
 
   const mini = shellMode === "mini";
   const immersive = shellMode === "immersive";
@@ -84,6 +88,8 @@ export function AppShell({ appName }: AppShellProps) {
 
         <PlayerBar reducedMotion={reducedMotion} />
         <YearLookbackAutoOpen />
+        <UpdateToast />
+        <PostUpdateDialog />
       </div>
     </TooltipPrimitive.Provider>
   );

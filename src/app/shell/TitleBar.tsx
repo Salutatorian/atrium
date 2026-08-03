@@ -5,26 +5,37 @@ import { useSettingsStore } from "../../stores/settings-store";
 
 export function TitleBar() {
   const closeToTray = useSettingsStore((s) => s.settings.general.closeToTray);
-  const runWindow = useCallback(async (action: "minimize" | "toggleMaximize" | "close") => {
-    if (!isTauriRuntime()) return;
-    const win = getCurrentWindow();
-    switch (action) {
-      case "minimize":
-        await win.minimize();
-        break;
-      case "toggleMaximize":
-        await win.toggleMaximize();
-        break;
-      case "close":
-        // Rust intercepts CloseRequested when close-to-tray is on.
-        await win.close();
-        break;
-      default: {
-        const _exhaustive: never = action;
-        return _exhaustive;
+  const runWindow = useCallback(
+    async (action: "minimize" | "toggleMaximize" | "close") => {
+      if (!isTauriRuntime()) return;
+      const win = getCurrentWindow();
+      switch (action) {
+        case "minimize":
+          await win.minimize();
+          break;
+        case "toggleMaximize":
+          await win.toggleMaximize();
+          break;
+        case "close": {
+          // Prefer hide when close-to-tray is on. Listening recorder also
+          // intercepts CloseRequested; hide here keeps UX snappy.
+          const tray =
+            useSettingsStore.getState().settings.general.closeToTray;
+          if (tray) {
+            await win.hide();
+          } else {
+            await win.close();
+          }
+          break;
+        }
+        default: {
+          const _exhaustive: never = action;
+          return _exhaustive;
+        }
       }
-    }
-  }, []);
+    },
+    [],
+  );
 
   return (
     <header className="titlebar">

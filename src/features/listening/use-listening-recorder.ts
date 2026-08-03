@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { isTauriRuntime } from "../../services/tauri";
 import { usePlayerStore } from "../../stores/player-store";
+import { useSettingsStore } from "../../stores/settings-store";
 import { recordScrobble, type ScrobbleInput } from "./api";
 
 const PENDING_KEY = "atrium.pending-listen";
@@ -223,14 +224,26 @@ export function useListeningRecorder() {
     if (isTauriRuntime()) {
       void getCurrentWindow()
         .onCloseRequested(async (event) => {
+          // Flush listen data, then honor close-to-tray (do not always destroy).
           event.preventDefault();
-          if (session.current) {
-            await flushSession(session.current);
-          } else {
-            await recoverPending();
+          try {
+            if (session.current) {
+              await flushSession(session.current);
+            } else {
+              await recoverPending();
+            }
+          } finally {
+            const closeToTray =
+              useSettingsStore.getState().settings.general.closeToTray;
+            const win = getCurrentWindow();
+            if (closeToTray) {
+              await win.hide();
+            } else {
+              unlistenClose?.();
+              unlistenClose = undefined;
+              await win.destroy();
+            }
           }
-          unlistenClose?.();
-          await getCurrentWindow().destroy();
         })
         .then((fn) => {
           unlistenClose = fn;

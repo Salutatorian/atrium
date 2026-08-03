@@ -8,6 +8,7 @@ import {
 } from "../../app/brand";
 import { isTauriRuntime } from "../../services/tauri";
 import { ThemesStudio } from "../themes/ThemesStudio";
+import { checkForAppUpdate } from "../updates/update-service";
 import { useSettingsStore } from "../../stores/settings-store";
 import type { AppSettings } from "./schema";
 import { cn } from "../../utils/cn";
@@ -130,6 +131,49 @@ function GeneralSettings() {
         Start Atrium when you sign in to this computer. Works on Windows, macOS,
         and Linux. Off by default.
       </p>
+      <label className="settings-field settings-field--checkbox">
+        <span>Check for updates</span>
+        <input
+          type="checkbox"
+          checked={settings.general.checkForUpdates}
+          onChange={(event) => {
+            void patchGeneral({ checkForUpdates: event.target.checked });
+          }}
+        />
+      </label>
+      <p className="settings-note">
+        Look for a newer Atrium on GitHub when the app starts. Uses a short
+        network check only for updates.
+      </p>
+      <label className="settings-field settings-field--checkbox">
+        <span>Install updates automatically</span>
+        <input
+          type="checkbox"
+          checked={settings.general.autoInstallUpdates}
+          disabled={!settings.general.checkForUpdates}
+          onChange={(event) => {
+            void patchGeneral({ autoInstallUpdates: event.target.checked });
+          }}
+        />
+      </label>
+      <p className="settings-note">
+        When on, Atrium downloads and installs on launch (the window may close
+        briefly while updating — same pattern as many desktop apps). Turn off to
+        get a bottom-right Update / Cancel notice instead. After updating,
+        you&apos;ll see what changed.
+      </p>
+      <div className="settings-field">
+        <button
+          type="button"
+          className="button-primary"
+          disabled={!settings.general.checkForUpdates}
+          onClick={() => {
+            void checkForAppUpdate({ force: true });
+          }}
+        >
+          Check now
+        </button>
+      </div>
     </div>
   );
 }

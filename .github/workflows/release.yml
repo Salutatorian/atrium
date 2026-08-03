@@ -54,6 +54,8 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: Atrium v__VERSION__
@@ -63,6 +65,11 @@ jobs:
             Download the installer for your OS from the assets below.
             Unsigned builds: macOS may need right-click → Open the first time;
             Windows SmartScreen may warn until code signing is added.
+
+            In-app updates need `latest.json` (produced when
+            `TAURI_SIGNING_PRIVATE_KEY` is set in repo secrets).
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true

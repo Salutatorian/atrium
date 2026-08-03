@@ -261,6 +261,8 @@ export function LyricsPanel({ className }: LyricsPanelProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, trackId, preferSynchronized, requestKey]);
 
+  const immersiveRead = mode === "read" && hasLyrics;
+
   if (!current || !path) {
     return (
       <p className="inspector__empty">
@@ -270,24 +272,32 @@ export function LyricsPanel({ className }: LyricsPanelProps) {
   }
 
   return (
-    <div className={cn("lyrics-panel", className)}>
-      <header className="lyrics-panel__header">
-        <p className="lyrics-panel__source">
-          {loading
-            ? "Looking for lyrics…"
-            : hasLyrics && mode === "read"
-              ? activeLyrics?.attribution || activeLyrics?.source
+    <div
+      className={cn(
+        "lyrics-panel",
+        immersiveRead && "lyrics-panel--immersive",
+        className,
+      )}
+    >
+      {!immersiveRead || loading || error ? (
+        <header className="lyrics-panel__header">
+          <p className="lyrics-panel__source">
+            {loading
+              ? "Looking for lyrics…"
               : mode === "find"
                 ? "Find lyrics"
                 : mode === "edit"
                   ? "Paste or edit"
-                  : "No lyrics yet"}
-        </p>
-        {error ? <p className="lyrics-panel__error">{error}</p> : null}
-        {status && mode === "find" ? (
-          <p className="lyrics-panel__status">{status}</p>
-        ) : null}
-      </header>
+                  : !hasLyrics
+                    ? "No lyrics yet"
+                    : null}
+          </p>
+          {error ? <p className="lyrics-panel__error">{error}</p> : null}
+          {status && mode === "find" ? (
+            <p className="lyrics-panel__status">{status}</p>
+          ) : null}
+        </header>
+      ) : null}
 
       <div className="lyrics-panel__body">
         {mode === "find" ? (
@@ -409,7 +419,7 @@ export function LyricsPanel({ className }: LyricsPanelProps) {
 
         {mode === "read" && hasSynced ? (
           <>
-            <div className="lyrics-follow-bar">
+            <div className="lyrics-follow-bar lyrics-panel__chrome">
               <button
                 type="button"
                 className={cn(
@@ -458,7 +468,7 @@ export function LyricsPanel({ className }: LyricsPanelProps) {
       </div>
 
       {mode === "read" ? (
-        <footer className="lyrics-panel__footer">
+        <footer className="lyrics-panel__footer lyrics-panel__chrome">
           {hasSynced ? (
             <label className="settings-field lyrics-panel__offset">
               <span>Track offset {trackOffset}ms</span>

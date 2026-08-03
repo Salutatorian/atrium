@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Atrium",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "identifier": "com.atrium.player",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost",
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://github.com https://api.github.com https://objects.githubusercontent.com https://release-assets.githubusercontent.com",
       "assetProtocol": {
         "enable": true,
         "scope": ["**"]
@@ -33,6 +33,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "icon": [
       "icons/32x32.png",
@@ -42,5 +43,12 @@
       "icons/icon.ico"
     ]
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYxREU4RTQxRjY2REQ1MzcKUldRMzFXMzJRWTdlWWZLR09VRXJGL21GRmYybjkwYnZid3A5NXhNMlpDUThYMU9UTlZyQ1NBVzcK",
+      "endpoints": [
+        "https://github.com/Salutatorian/atrium/releases/latest/download/latest.json"
+      ]
+    }
+  }
 }
