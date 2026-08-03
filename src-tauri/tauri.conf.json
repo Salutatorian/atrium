@@ -27,7 +27,9 @@
       "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://github.com https://api.github.com https://objects.githubusercontent.com https://release-assets.githubusercontent.com",
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   },
@@ -46,7 +48,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYxREU4RTQxRjY2REQ1MzcKUldRMzFXMzJRWTdlWWZLR09VRXJGL21GRmYybjkwYnZid3A5NXhNMlpDUThYMU9UTlZyQ1NBVzcK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk5ODQyNEYyRjUxMjRCMkQKUldRdFN4TDE4aVNFbVpzZ01VUExlQWVNcGl0elFRbk1rTEpYbDRLNDE2MTdRb1pzUmdLbkQ1aE8K",
       "endpoints": [
         "https://github.com/Salutatorian/atrium/releases/latest/download/latest.json"
       ]
