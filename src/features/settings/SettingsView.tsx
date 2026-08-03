@@ -6,6 +6,7 @@ import {
   APP_GITHUB_URL,
   APP_NAME,
 } from "../../app/brand";
+import { BrandLogo } from "../../app/shell/BrandLogo";
 import { isTauriRuntime } from "../../services/tauri";
 import { ThemesStudio } from "../themes/ThemesStudio";
 import { checkForAppUpdate } from "../updates/update-service";
@@ -560,6 +561,11 @@ function AboutSettings() {
   return (
     <div className="settings-stack settings-stack--about">
       <h2 className="settings-section-title">About</h2>
+      <BrandLogo
+        size="lg"
+        decorative={false}
+        className="settings-about-logo"
+      />
       <p className="settings-note">
         {APP_NAME} — {APP_DESCRIPTION}
       </p>

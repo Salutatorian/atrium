@@ -1,3 +1,4 @@
+import { BrandLogo } from "../../app/shell/BrandLogo";
 import { useUpdateStore } from "../../stores/update-store";
 import {
   cancelAvailableUpdate,
@@ -21,9 +22,10 @@ export function UpdateToast() {
       role="status"
       aria-live="polite"
     >
+      <BrandLogo size="sm" className="update-toast__logo" />
       <div className="update-toast__copy">
         <p className="update-toast__title">
-          {busy ? "Updating Atrium…" : `Update available · v${available.version}`}
+          {busy ? "Updating…" : `Update available · v${available.version}`}
         </p>
         <p className="update-toast__detail muted">
           {busy

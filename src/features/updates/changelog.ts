@@ -52,6 +52,10 @@ export const UPDATE_RELEASES: UpdateRelease[] = [
         text: "In-app updater with settings toggle, gear badge, and release notes toast",
       },
       {
+        kind: "add",
+        text: "Official Atrium logo across the app, tray/window icons, and README",
+      },
+      {
         kind: "fix",
         text: "Close to system tray actually hides the window and keeps the tray icon",
       },

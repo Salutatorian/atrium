@@ -1,7 +1,12 @@
-# Atrium
+<p align="center">
+  <img src="docs/brand/atrium-logo-sm.png" alt="Atrium" width="56" />
+</p>
 
-**Working project name:** Atrium  
-Offline-first, highly customizable desktop music player for Windows, macOS, and Linux.
+<h1 align="center">Atrium</h1>
+
+<p align="center">
+  Offline-first, highly customizable desktop music player for Windows, macOS, and Linux.
+</p>
 
 Atrium is a private listening room for your local music library — not a streaming client, not a cloud account product, and not a boxed desktop database. You own the files, layout, appearance, lyrics, listening data, and settings.
 

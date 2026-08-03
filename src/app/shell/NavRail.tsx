@@ -5,6 +5,7 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { useShellStore } from "../../stores/shell-store";
 import { useUpdateStore } from "../../stores/update-store";
 import { cn } from "../../utils/cn";
+import { BrandLogo } from "./BrandLogo";
 import { primaryNav, utilityNav } from "./nav-items";
 
 export function NavRail() {
@@ -28,12 +29,14 @@ export function NavRail() {
           className="brand-mark"
           onClick={() => setActiveNav("home")}
           aria-label={`${APP_NAME} home`}
+          title={APP_NAME}
         >
-          <span className="brand-mark__word" aria-hidden="true">
-            A
-          </span>
+          <BrandLogo
+            size={expanded ? "md" : "sm"}
+            className="brand-mark__logo"
+          />
           {expanded ? (
-            <span className="brand-mark__name">{APP_NAME}</span>
+            <span className="brand-mark__name sr-only">{APP_NAME}</span>
           ) : null}
         </button>
       </div>

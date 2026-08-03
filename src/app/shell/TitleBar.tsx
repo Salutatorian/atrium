@@ -2,6 +2,8 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCallback } from "react";
 import { isTauriRuntime } from "../../services/tauri";
 import { useSettingsStore } from "../../stores/settings-store";
+import { APP_NAME } from "../brand";
+import { BrandLogo } from "./BrandLogo";
 
 export function TitleBar() {
   const closeToTray = useSettingsStore((s) => s.settings.general.closeToTray);
@@ -40,8 +42,13 @@ export function TitleBar() {
   return (
     <header className="titlebar">
       <div className="titlebar__drag" data-tauri-drag-region>
-        <span className="titlebar__brand" data-tauri-drag-region>
-          Atrium
+        <span
+          className="titlebar__brand"
+          data-tauri-drag-region
+          title={APP_NAME}
+          aria-label={APP_NAME}
+        >
+          <BrandLogo size="sm" className="titlebar__logo" />
         </span>
       </div>
       <div className="titlebar__controls">

@@ -1,5 +1,6 @@
 /**
  * Centralized product identity.
+ * Visual mark: `src/assets/atrium-logo.png` (also `docs/brand/` for README).
  * Rename here (and in package/Cargo/tauri config) when the final name is chosen.
  */
 export const APP_NAME = "Atrium";

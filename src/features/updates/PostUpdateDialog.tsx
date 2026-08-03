@@ -1,3 +1,4 @@
+import { BrandLogo } from "../../app/shell/BrandLogo";
 import { UPDATE_KIND_LABEL, type UpdateRelease } from "./changelog";
 import { useUpdateStore } from "../../stores/update-store";
 import { cn } from "../../utils/cn";
@@ -12,6 +13,7 @@ export function PostUpdateDialog() {
     <div className="post-update" role="dialog" aria-label="What's new">
       <div className="post-update__card">
         <header className="post-update__header">
+          <BrandLogo size="md" className="post-update__logo" />
           <p className="post-update__eyebrow">Updated to v{release.version}</p>
           <h2 className="post-update__title">{release.title}</h2>
           <p className="post-update__summary">{release.summary}</p>
