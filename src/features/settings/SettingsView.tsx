@@ -5,8 +5,10 @@ import {
   APP_GITHUB_ISSUES_URL,
   APP_GITHUB_URL,
   APP_NAME,
+  DONATE_AMOUNTS,
 } from "../../app/brand";
 import { BrandLogo } from "../../app/shell/BrandLogo";
+import { Tooltip } from "../../components/Tooltip";
 import { isTauriRuntime } from "../../services/tauri";
 import { ThemesStudio } from "../themes/ThemesStudio";
 import { checkForAppUpdate } from "../updates/update-service";
@@ -596,6 +598,27 @@ function AboutSettings() {
       <p className="settings-note settings-note--mono">
         {APP_GITHUB_URL.replace(/^https:\/\//, "")}
       </p>
+
+      <h2 className="settings-section-title">Support {APP_NAME}</h2>
+      <p className="settings-note">
+        Optional tips help keep development going. Opens Stripe Checkout in your
+        browser — card details stay with Stripe, never this app.
+      </p>
+      <div className="settings-about-actions" role="group" aria-label="Donate">
+        {DONATE_AMOUNTS.map((amount) => (
+          <Tooltip key={amount.id} label={amount.tooltip} side="top">
+            <button
+              type="button"
+              className="button-primary"
+              onClick={() => {
+                void openExternal(amount.url);
+              }}
+            >
+              {amount.label}
+            </button>
+          </Tooltip>
+        ))}
+      </div>
     </div>
   );
 }

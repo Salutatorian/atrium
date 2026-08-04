@@ -40,6 +40,24 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-08-v1-5-1",
+    version: "1.5.1",
+    title: "Atrium 1.5.1",
+    date: "2026-08-04",
+    summary:
+      "Optional tips via Stripe, plus an Apache-2.0 license clarifying ownership.",
+    changes: [
+      {
+        kind: "add",
+        text: "Donate $1 / $3 / $5 in Settings → About (opens Stripe Checkout in your browser)",
+      },
+      {
+        kind: "add",
+        text: "Apache License 2.0 with copyright held by Salutatorian",
+      },
+    ],
+  },
+  {
     id: "2026-08-v1-5-0",
     version: "1.5.0",
     title: "Atrium 1.5",

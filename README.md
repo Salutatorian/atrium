@@ -92,4 +92,6 @@ The temporary name is centralized in:
 
 ## License
 
-Source license for the application itself is TBD pending final naming and distribution review. Third-party licenses are listed in `docs/dependency-inventory.md`. Do not copy GPL theme packs (e.g. Monkeytype themes) into the core distribution without a separate licensing review.
+Copyright © 2026 [Salutatorian](https://github.com/Salutatorian).
+
+Atrium is licensed under the [Apache License 2.0](LICENSE). See also [NOTICE](NOTICE). Third-party licenses are listed in `docs/dependency-inventory.md`. Do not copy GPL theme packs (e.g. Monkeytype themes) into the core distribution without a separate licensing review.

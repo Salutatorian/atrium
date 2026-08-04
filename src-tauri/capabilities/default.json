@@ -6,6 +6,17 @@
   "permissions": [
     "core:default",
     "opener:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://donate.stripe.com/*" },
+        { "url": "https://buy.stripe.com/*" },
+        { "url": "https://checkout.stripe.com/*" },
+        { "url": "https://stripe.com/*" },
+        { "url": "https://www.stripe.com/*" },
+        { "url": "https://github.com/*" }
+      ]
+    },
     "dialog:default",
     "autostart:default",
     "updater:default",
