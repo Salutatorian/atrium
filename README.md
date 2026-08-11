@@ -6,17 +6,14 @@
 
 A private listening room for **your** local music.
 
-No accounts. No streaming. No cloud library. Songs stay on your computer — Atrium only indexes them.
+<p align="center">
+  <a href="https://github.com/Salutatorian/atrium/releases/latest"><img src="https://img.shields.io/github/v/release/Salutatorian/atrium?label=Download&color=0e7aef" alt="Download" /></a>
+  <img src="https://img.shields.io/badge/Windows%20%7C%20macOS%20%7C%20Linux-native-111111" alt="Windows | macOS | Linux native" />
+  <img src="https://img.shields.io/badge/Privacy-100%25%20offline-22c55e" alt="Privacy 100% offline" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-0e7aef" alt="License Apache-2.0" /></a>
+</p>
 
-## Download
-
-**[Download the latest release](https://github.com/Salutatorian/atrium/releases/latest)**
-
-| Platform | Get |
-| --- | --- |
-| **Windows** | `.exe` setup or `.msi` |
-| **macOS** | Apple Silicon or Intel `.dmg` — first open: right-click → **Open** |
-| **Linux** | AppImage, `.deb`, or `.rpm` |
+**[Get the latest release](https://github.com/Salutatorian/atrium/releases/latest)** · macOS first open: right-click → **Open**
 
 ## What it does
 
@@ -48,15 +45,6 @@ Synced lyrics when you have them (local files, optional online lookup). Themes a
   <img src="docs/screenshots/lyrics.png" alt="Atrium lyrics" width="720" />
 </p>
 
-## Privacy
-
-Everything runs on your machine. Your library paths, listen history, and settings stay local. Optional network features (lyrics lookup, update checks) are off unless you turn them on.
-
-## License
-
-[Apache License 2.0](LICENSE). Copyright © 2026 [Salutatorian](https://github.com/Salutatorian).  
-Third-party notices: [`docs/dependency-inventory.md`](docs/dependency-inventory.md).
-
 ## For developers
 
 ```bash
@@ -67,4 +55,5 @@ npm run tauri dev
 Needs Node.js 20+, Rust stable, and the usual Tauri WebView deps for your OS.  
 Build: `npm run tauri build` → installers under `src-tauri/target/release/bundle/`.
 
+Copyright © 2026 [Salutatorian](https://github.com/Salutatorian). Third-party notices: [`docs/dependency-inventory.md`](docs/dependency-inventory.md).  
 More design notes live under [`docs/`](docs/) if you need them.
