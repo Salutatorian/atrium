@@ -79,5 +79,6 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     root.dataset.themeBase = theme.base;
     root.dataset.themeId = theme.id;
     root.dataset.bgMode = theme.background.mode;
+    // Font preferences live in Settings and re-apply via useAppFonts after this.
   },
 }));

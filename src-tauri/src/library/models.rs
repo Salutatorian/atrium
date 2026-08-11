@@ -86,6 +86,17 @@ pub struct ScanProgressEvent {
     pub errors: u64,
     pub current_path: Option<String>,
     pub message: Option<String>,
+    /// Up to a handful of failed files so the UI can explain "Completed with errors".
+    #[serde(default)]
+    pub error_samples: Vec<ImportErrorSample>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportErrorSample {
+    pub path: String,
+    pub code: String,
+    pub message: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

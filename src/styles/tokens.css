@@ -53,27 +53,50 @@
   --player-offset: calc(18px * var(--spacing-scale));
   --density-font-adjust: 0px;
   --density-list-gap: 0.75rem;
+  --density-row-pad-y: 0.7rem;
+  --density-row-pad-x: 0.15rem;
+  --density-art-size: 48px;
+  --density-workspace-pad: 1.85rem;
 }
 
+/* Compact: tight lists, smaller type, denser chrome — clearly distinct */
 .density-compact {
-  --spacing-scale: 0.88;
-  --control-height: 32px;
-  --density-font-adjust: -0.5px;
-  --density-list-gap: 0.55rem;
-  --font-size-base: calc(14px + var(--density-font-adjust));
+  --spacing-scale: 0.78;
+  --control-height: 28px;
+  --density-font-adjust: -1px;
+  --density-list-gap: 0.35rem;
+  --density-row-pad-y: 0.38rem;
+  --density-row-pad-x: 0.1rem;
+  --density-art-size: 36px;
+  --density-workspace-pad: 1.15rem;
+  --font-size-base: 13px;
+  --line-height: 1.35;
 }
 
+/* Comfortable: default breathing room */
 .density-comfortable {
   --spacing-scale: 1;
   --control-height: 36px;
   --density-font-adjust: 0px;
   --density-list-gap: 0.75rem;
+  --density-row-pad-y: 0.7rem;
+  --density-row-pad-x: 0.15rem;
+  --density-art-size: 48px;
+  --density-workspace-pad: 1.85rem;
+  --font-size-base: 14px;
+  --line-height: 1.45;
 }
 
+/* Spacious: roomy rows, larger hits, more padding */
 .density-spacious {
-  --spacing-scale: 1.16;
-  --control-height: 42px;
-  --density-font-adjust: 1px;
-  --density-list-gap: 0.95rem;
-  --font-size-base: calc(14px + var(--density-font-adjust));
+  --spacing-scale: 1.24;
+  --control-height: 44px;
+  --density-font-adjust: 1.5px;
+  --density-list-gap: 1.15rem;
+  --density-row-pad-y: 1.05rem;
+  --density-row-pad-x: 0.25rem;
+  --density-art-size: 58px;
+  --density-workspace-pad: 2.35rem;
+  --font-size-base: 15.5px;
+  --line-height: 1.55;
 }

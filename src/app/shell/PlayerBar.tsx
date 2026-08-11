@@ -238,7 +238,9 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
                 "icon-button icon-button--quiet",
                 repeat !== "off" && "icon-button--active",
               )}
-              aria-label="Repeat"
+              aria-label={
+                repeat === "track" ? "Repeat one song" : "Repeat"
+              }
               aria-pressed={repeat !== "off"}
               onClick={() => {
                 void playerSetRepeat(nextRepeat(repeat)).then(applySnapshot);
@@ -446,10 +448,25 @@ function TransportGlyph({
       );
     case "repeat-one":
       return (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-          <path d="M7 7h9a4 4 0 0 1 4 4v1M17 17H8a4 4 0 0 1-4-4v-1" strokeLinecap="round" />
-          <path d="m14 4 3 3-3 3M10 20l-3-3 3-3" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M12 10v4" strokeLinecap="round" />
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M7 7h9a4 4 0 0 1 4 4v1M17 17H8a4 4 0 0 1-4-4v-1"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+          />
+          <path
+            d="m14 4 3 3-3 3M10 20l-3-3 3-3"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Spotify-style “1” for repeat track */}
+          <path
+            d="M11.15 9.2V15h1.15V10.55h.05l1.55.55V10.2l-1.7-.95h-1.05Z"
+            fill="currentColor"
+          />
         </svg>
       );
     case "volume":

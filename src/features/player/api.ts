@@ -6,6 +6,7 @@ import type {
   PositionEvent,
   QueueTrack,
   RepeatMode,
+  SpectrumEvent,
   TrackChangedEvent,
 } from "./types";
 
@@ -138,6 +139,15 @@ export async function onPlayerError(
 ): Promise<UnlistenFn> {
   if (!isTauriRuntime()) return () => undefined;
   return listen<string>("player://error", (event) => {
+    handler(event.payload);
+  });
+}
+
+export async function onPlayerSpectrum(
+  handler: (frame: SpectrumEvent) => void,
+): Promise<UnlistenFn> {
+  if (!isTauriRuntime()) return () => undefined;
+  return listen<SpectrumEvent>("player://spectrum", (event) => {
     handler(event.payload);
   });
 }

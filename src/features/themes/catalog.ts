@@ -43,8 +43,42 @@ const sharedAppearance = {
   inspectorWidth: 320,
 } as const;
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const raw = hex.replace("#", "").trim();
+  const full =
+    raw.length === 3
+      ? raw
+          .split("")
+          .map((c) => `${c}${c}`)
+          .join("")
+      : raw;
+  const n = Number.parseInt(full, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgba(hex: string, alpha: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/** Stable background variety — not every preset is a gradient wash. */
+function pickBackgroundMode(
+  p: Palette,
+): "solid" | "gradient" | "none" {
+  const tags = new Set(p.tags);
+  if (tags.has("neon")) return "gradient";
+  if (tags.has("mono") || tags.has("paper")) return "solid";
+  const hash = [...p.id].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  const modes = ["solid", "gradient", "none", "solid", "gradient"] as const;
+  return modes[hash % modes.length] ?? "solid";
+}
+
 function fromPalette(p: Palette): ThemeDocument {
   const dark = p.base === "dark";
+  const mode = pickBackgroundMode(p);
+  const ink = dark ? "#ffffff" : p.primaryText;
+  const panel = p.raisedBackground;
+
   return {
     kind: THEME_FILE_KIND,
     schemaVersion: THEME_SCHEMA_VERSION,
@@ -56,18 +90,11 @@ function fromPalette(p: Palette): ThemeDocument {
     colors: {
       appBackground: p.appBackground,
       raisedBackground: p.raisedBackground,
-      surface: dark
-        ? "rgba(255, 255, 255, 0.06)"
-        : "rgba(255, 255, 255, 0.62)",
-      surfaceHover: dark
-        ? "rgba(255, 255, 255, 0.1)"
-        : "rgba(255, 255, 255, 0.84)",
-      surfaceActive: dark
-        ? "rgba(255, 255, 255, 0.12)"
-        : "rgba(255, 255, 255, 0.9)",
-      surfaceSelected: dark
-        ? "rgba(255, 255, 255, 0.14)"
-        : "rgba(255, 255, 255, 0.92)",
+      // Tint panels from the theme (Monkeytype-style), not generic white glass.
+      surface: rgba(panel, dark ? 0.72 : 0.88),
+      surfaceHover: rgba(panel, dark ? 0.88 : 0.96),
+      surfaceActive: rgba(p.accent, dark ? 0.22 : 0.16),
+      surfaceSelected: rgba(p.accent, dark ? 0.28 : 0.2),
       primaryText: p.primaryText,
       secondaryText: p.secondaryText,
       mutedText: p.mutedText,
@@ -75,56 +102,43 @@ function fromPalette(p: Palette): ThemeDocument {
       accentHover: p.accentHover,
       accentText: p.accentText,
       secondaryAccent: p.accentHover,
-      border: dark
-        ? "rgba(255, 255, 255, 0.08)"
-        : "rgba(20, 24, 28, 0.08)",
-      divider: dark
-        ? "rgba(255, 255, 255, 0.06)"
-        : "rgba(20, 24, 28, 0.06)",
+      border: rgba(ink, dark ? 0.1 : 0.1),
+      divider: rgba(ink, dark ? 0.07 : 0.08),
       focusRing: p.accent,
       success: "#3f9d78",
       warning: "#d08a4c",
       danger: "#d16a6a",
-      artworkGlow: dark
-        ? "rgba(255, 255, 255, 0.18)"
-        : "rgba(20, 24, 28, 0.12)",
+      artworkGlow: rgba(p.accent, dark ? 0.28 : 0.18),
       waveform: p.accent,
-      progressTrack: dark
-        ? "rgba(255, 255, 255, 0.14)"
-        : "rgba(20, 24, 28, 0.12)",
+      progressTrack: rgba(ink, dark ? 0.16 : 0.14),
       progressFill: p.accent,
       lyricActive: p.primaryText,
-      lyricPast: dark
-        ? "rgba(255, 255, 255, 0.4)"
-        : "rgba(20, 24, 28, 0.4)",
-      lyricFuture: dark
-        ? "rgba(255, 255, 255, 0.72)"
-        : "rgba(20, 24, 28, 0.7)",
-      selection: dark
-        ? "rgba(255, 255, 255, 0.14)"
-        : "rgba(20, 24, 28, 0.1)",
-      scrollbar: dark
-        ? "rgba(255, 255, 255, 0.22)"
-        : "rgba(20, 24, 28, 0.22)",
-      tooltipBackground: dark ? p.raisedBackground : "#1a2428",
-      tooltipText: dark ? p.primaryText : "#f4f7f8",
+      lyricPast: rgba(p.primaryText, dark ? 0.42 : 0.4),
+      lyricFuture: rgba(p.primaryText, dark ? 0.72 : 0.68),
+      selection: rgba(p.accent, dark ? 0.28 : 0.18),
+      scrollbar: rgba(ink, dark ? 0.24 : 0.22),
+      tooltipBackground: dark ? p.raisedBackground : p.primaryText,
+      tooltipText: dark ? p.primaryText : p.appBackground,
       contextMenuBackground: p.raisedBackground,
     },
     appearance: {
       ...sharedAppearance,
-      shadowStrength: dark ? 0.55 : 0.35,
-      blurStrength: dark ? 22 : 18,
+      shadowStrength: dark ? 0.55 : 0.28,
+      blurStrength: mode === "solid" || mode === "none" ? (dark ? 12 : 10) : dark ? 22 : 18,
+      surfaceOpacity: mode === "solid" || mode === "none" ? 0.92 : 0.72,
     },
     background: {
-      mode: "gradient",
+      mode,
       blur: 0,
-      darkness: dark ? 0.22 : 0.04,
+      darkness: mode === "gradient" ? (dark ? 0.18 : 0.03) : 0,
       brightness: 1,
-      saturation: 1.05,
-      overlayOpacity: dark ? 0.28 : 0.12,
-      noiseAmount: 0.04,
-      vignetteAmount: dark ? 0.34 : 0.16,
-      animationStrength: 0.2,
+      saturation: mode === "gradient" ? 1.05 : 1,
+      overlayOpacity:
+        mode === "none" ? 0 : mode === "solid" ? (dark ? 0.08 : 0.02) : dark ? 0.22 : 0.08,
+      noiseAmount: mode === "none" ? 0 : mode === "solid" ? 0.02 : 0.04,
+      vignetteAmount:
+        mode === "none" ? 0 : mode === "solid" ? (dark ? 0.12 : 0.04) : dark ? 0.3 : 0.12,
+      animationStrength: mode === "gradient" ? 0.2 : 0,
     },
   };
 }

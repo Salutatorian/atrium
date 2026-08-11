@@ -68,15 +68,15 @@ export const mistTheme: ThemeDocument = {
   },
   appearance: { ...sharedAppearance, sidebarWidth: 72 },
   background: {
-    mode: "gradient",
+    mode: "solid",
     blur: 0,
-    darkness: 0.02,
+    darkness: 0,
     brightness: 1,
     saturation: 1,
-    overlayOpacity: 0.12,
-    noiseAmount: 0.04,
-    vignetteAmount: 0.18,
-    animationStrength: 0.25,
+    overlayOpacity: 0.02,
+    noiseAmount: 0.02,
+    vignetteAmount: 0.06,
+    animationStrength: 0,
   },
 };
 

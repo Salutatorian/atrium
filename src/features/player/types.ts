@@ -26,6 +26,13 @@ export type PlayerSnapshot = {
   queueIndex?: number | null;
 };
 
+export type SpectrumEvent = {
+  bands: number[];
+  bass: number;
+  beat: number;
+  energy: number;
+};
+
 export type PositionEvent = {
   positionMs: number;
   durationMs: number;

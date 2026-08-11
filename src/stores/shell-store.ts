@@ -42,7 +42,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
   inspectorWidth: 380,
   inspectorTab: "queue",
   nowPlayingOpen: false,
-  setActiveNav: (activeNav) => set({ activeNav }),
+  setActiveNav: (activeNav) => set({ activeNav, nowPlayingOpen: false }),
   setLibraryTab: (libraryTab) => set({ libraryTab }),
   toggleSidebar: () =>
     set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),

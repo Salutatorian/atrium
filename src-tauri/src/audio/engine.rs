@@ -5,7 +5,9 @@ use crate::audio::types::{
     PlayerSnapshot, PlayerStatus, PositionEvent, QueueTrack, RepeatMode, TrackChangedEvent,
 };
 use crate::error::AppError;
-use crate::events::{PLAYER_ERROR, PLAYER_POSITION, PLAYER_QUEUE_CHANGED, PLAYER_TRACK_CHANGED};
+use crate::events::{
+    PLAYER_ERROR, PLAYER_POSITION, PLAYER_QUEUE_CHANGED, PLAYER_SPECTRUM, PLAYER_TRACK_CHANGED,
+};
 use crate::settings::PlaybackSettings;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use parking_lot::Mutex;
@@ -99,11 +101,38 @@ impl PlayerEngine {
 
     pub fn apply_playback_settings(&self, settings: &PlaybackSettings) {
         self.buffer.dsp.set_preamp_db(settings.preamp_db as f32);
-        self.buffer.dsp.set_eq(
+        let mut gains = [0.0_f32; crate::audio::dsp::EQ_BAND_COUNT];
+        for (i, g) in settings.eq_bands.iter().take(gains.len()).enumerate() {
+            gains[i] = (*g as f32).clamp(-12.0, 12.0);
+        }
+        // Legacy fallback: old 3-band settings → approximate 10-band curve
+        if settings.eq_bands.iter().all(|g| *g == 0.0)
+            && (settings.eq_bass_db != 0.0
+                || settings.eq_mid_db != 0.0
+                || settings.eq_treble_db != 0.0)
+        {
+            let bass = settings.eq_bass_db as f32;
+            let mid = settings.eq_mid_db as f32;
+            let treble = settings.eq_treble_db as f32;
+            gains = [
+                bass,
+                bass * 0.85,
+                bass * 0.45 + mid * 0.2,
+                mid * 0.7,
+                mid,
+                mid * 0.7,
+                mid * 0.35 + treble * 0.35,
+                treble * 0.7,
+                treble,
+                treble * 0.85,
+            ];
+        }
+        let sr = self.buffer.sample_rate.load(Ordering::Relaxed) as f32;
+        self.buffer.dsp.set_eq_bands(
             settings.eq_enabled,
-            settings.eq_bass_db as f32,
-            settings.eq_mid_db as f32,
-            settings.eq_treble_db as f32,
+            &gains,
+            settings.eq_q as f32,
+            sr,
         );
         let mode = match settings.replay_gain_mode.as_str() {
             "track" => 1,
@@ -243,6 +272,7 @@ fn run_player_worker(
     let mut decoder: Option<SymphoniaDecoder> = None;
     let mut playing = false;
     let mut last_emit = Instant::now();
+    let mut last_spectrum = Instant::now();
     let mut decode_origin_ms = 0u64;
     let mut decoded_frames: u64 = 0;
     let source_rate = Arc::new(AtomicU64::new(out_rate as u64));
@@ -516,6 +546,20 @@ fn run_player_worker(
                     status: *state.status.lock(),
                 },
             );
+        }
+
+        // ~55 Hz spectrum for beat-reactive visualizer
+        if last_spectrum.elapsed() >= Duration::from_millis(18) {
+            last_spectrum = Instant::now();
+            let status = *state.status.lock();
+            if matches!(status, PlayerStatus::Playing) {
+                let frame = buffer.spectrum.compute(out_rate);
+                let _ = app.emit(PLAYER_SPECTRUM, frame);
+            } else if matches!(status, PlayerStatus::Paused | PlayerStatus::Stopped) {
+                // Emit decaying silence so bars fall smoothly when paused/stopped
+                let frame = buffer.spectrum.compute(out_rate);
+                let _ = app.emit(PLAYER_SPECTRUM, frame);
+            }
         }
 
         thread::sleep(Duration::from_millis(4));

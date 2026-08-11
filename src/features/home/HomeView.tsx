@@ -24,7 +24,6 @@ import { usePlayerStore } from "../../stores/player-store";
 import { useShellStore } from "../../stores/shell-store";
 import { isTauriRuntime } from "../../services/tauri";
 import { cn } from "../../utils/cn";
-import { UpdatesShowcase } from "../updates/UpdatesShowcase";
 
 function greeting(): string {
   const hour = new Date().getHours();
@@ -103,8 +102,6 @@ export function HomeView() {
           Search
         </button>
       </header>
-
-      <UpdatesShowcase />
 
       {emptyLibrary ? (
         <div className="home-empty">

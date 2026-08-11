@@ -4,7 +4,7 @@ use crate::events::{LIBRARY_UPDATED, SCAN_PROGRESS};
 use crate::library::discover::discover_audio_files;
 use crate::library::extensions::is_supported_audio;
 use crate::library::metadata::parse_audio_file;
-use crate::library::models::{DropClassification, ScanProgressEvent};
+use crate::library::models::{DropClassification, ImportErrorSample, ScanProgressEvent};
 use crate::library::repository::{
     collapse_duplicate_tracks, create_scan_job, file_needs_rescan, mark_absent_files_missing,
     record_import_error, register_user_library_root, update_scan_job, upsert_parsed_track,
@@ -84,6 +84,7 @@ impl ScanManager {
                         errors: 1,
                         current_path: None,
                         message: Some(err.to_string()),
+                        error_samples: vec![],
                     },
                 );
             }
@@ -165,6 +166,7 @@ fn run_scan_job(
             errors: 0,
             current_path: None,
             message: Some("Discovering audio files".into()),
+            error_samples: vec![],
         },
     )?;
 
@@ -215,11 +217,13 @@ fn run_scan_job(
             errors: 0,
             current_path: None,
             message: Some(format!("Found {} files", discovered.len())),
+            error_samples: vec![],
         },
     )?;
 
     let mut processed = 0u64;
     let mut errors = 0u64;
+    let mut error_samples: Vec<ImportErrorSample> = Vec::new();
     let mut last_emit = Instant::now();
     let data_dir = app.state::<AppState>().data_dir.clone();
 
@@ -252,6 +256,7 @@ fn run_scan_job(
                     errors,
                     current_path: Some(path.to_string_lossy().to_string()),
                     message: Some("Scan paused".into()),
+                    error_samples: vec![],
                 },
             )?;
             thread::sleep(Duration::from_millis(200));
@@ -280,6 +285,7 @@ fn run_scan_job(
                     errors,
                     current_path: None,
                     message: Some("Scan cancelled".into()),
+                    error_samples: vec![],
                 },
             )?;
             return Ok(());
@@ -290,6 +296,12 @@ fn run_scan_job(
             Ok(m) => m,
             Err(err) => {
                 errors += 1;
+                push_error_sample(
+                    &mut error_samples,
+                    &path_str,
+                    "io_error",
+                    &err.to_string(),
+                );
                 let state = app.state::<AppState>();
                 let db = state.db.lock();
                 let _ = record_import_error(
@@ -327,6 +339,12 @@ fn run_scan_job(
                     let db = state.db.lock();
                     if let Err(err) = upsert_parsed_track(&db, &data_dir, &parsed) {
                         errors += 1;
+                        push_error_sample(
+                            &mut error_samples,
+                            &path_str,
+                            "ingest_error",
+                            &err.to_string(),
+                        );
                         let _ = record_import_error(
                             &db,
                             &job_id,
@@ -338,6 +356,12 @@ fn run_scan_job(
                 }
                 Err(err) => {
                     errors += 1;
+                    push_error_sample(
+                        &mut error_samples,
+                        &path_str,
+                        "metadata_error",
+                        &err.to_string(),
+                    );
                     let state = app.state::<AppState>();
                     let db = state.db.lock();
                     let _ = record_import_error(
@@ -381,6 +405,7 @@ fn run_scan_job(
                     errors,
                     current_path: Some(shorten_path(path)),
                     message: None,
+                    error_samples: vec![],
                 },
             );
         }
@@ -412,6 +437,14 @@ fn run_scan_job(
         )?;
     }
 
+    let total = discovered.len() as u64;
+    let ok_count = total.saturating_sub(errors);
+    let message = if errors > 0 {
+        format!("Indexed {ok_count} of {total} files · {errors} couldn't be read")
+    } else {
+        format!("Indexed {processed} files")
+    };
+
     emit_progress(
         &app,
         ScanProgressEvent {
@@ -421,12 +454,29 @@ fn run_scan_job(
             processed,
             errors,
             current_path: None,
-            message: Some(format!("Indexed {processed} files")),
+            message: Some(message),
+            error_samples,
         },
     )?;
 
     let _ = app.emit(LIBRARY_UPDATED, ());
     Ok(())
+}
+
+fn push_error_sample(
+    samples: &mut Vec<ImportErrorSample>,
+    path: &str,
+    code: &str,
+    message: &str,
+) {
+    if samples.len() >= 8 {
+        return;
+    }
+    samples.push(ImportErrorSample {
+        path: path.to_string(),
+        code: code.to_string(),
+        message: message.to_string(),
+    });
 }
 
 fn emit_progress(app: &AppHandle, event: ScanProgressEvent) -> Result<(), AppError> {

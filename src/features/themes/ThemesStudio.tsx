@@ -175,13 +175,27 @@ export function ThemesStudio() {
                 <span
                   className="theme-card__swatch"
                   style={{
-                    background: `linear-gradient(135deg, ${item.colors.appBackground}, ${item.colors.accent})`,
+                    background: item.colors.appBackground,
+                    color: item.colors.primaryText,
+                    borderColor: item.colors.accent,
                   }}
-                />
+                >
+                  <span className="theme-card__swatch-label">{item.name}</span>
+                  <span
+                    className="theme-card__dots"
+                    aria-hidden="true"
+                  >
+                    <i style={{ background: item.colors.accent }} />
+                    <i style={{ background: item.colors.secondaryAccent }} />
+                    <i style={{ background: item.colors.primaryText }} />
+                  </span>
+                </span>
                 <span className="theme-card__meta">
                   <span className="theme-card__name">{item.name}</span>
                   <span className="theme-card__desc">
                     {item.description || (isCustom ? "Custom theme" : item.base)}
+                    {" · "}
+                    {item.background.mode}
                   </span>
                 </span>
               </button>

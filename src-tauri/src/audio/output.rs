@@ -1,4 +1,5 @@
 use crate::audio::dsp::{DspControls, EqRuntime};
+use crate::audio::spectrum::SpectrumTap;
 use crate::error::AppError;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Device, SampleFormat, Stream, StreamConfig};
@@ -14,8 +15,10 @@ pub struct SharedBuffer {
     pub muted: AtomicBool,
     /// When true, output silence without draining the buffer (instant pause).
     pub paused: AtomicBool,
+    pub sample_rate: AtomicU32,
     pub dsp: DspControls,
     eq: Mutex<EqRuntime>,
+    pub spectrum: SpectrumTap,
 }
 
 impl SharedBuffer {
@@ -25,8 +28,10 @@ impl SharedBuffer {
             volume: AtomicU32::new(f32::to_bits(0.8)),
             muted: AtomicBool::new(false),
             paused: AtomicBool::new(false),
+            sample_rate: AtomicU32::new(48_000),
             dsp: DspControls::new(),
             eq: Mutex::new(EqRuntime::default()),
+            spectrum: SpectrumTap::new(),
         })
     }
 
@@ -42,6 +47,7 @@ impl SharedBuffer {
 
     pub fn clear(&self) {
         self.samples.lock().clear();
+        self.spectrum.clear();
     }
 
     pub fn len(&self) -> usize {
@@ -53,6 +59,7 @@ impl SharedBuffer {
             for sample in output.iter_mut() {
                 *sample = 0.0;
             }
+            self.spectrum.feed_interleaved(output);
             return;
         }
         let muted = self.muted.load(Ordering::Relaxed);
@@ -67,6 +74,10 @@ impl SharedBuffer {
                 *sample = eq.process(next, &self.dsp) * volume;
             }
         }
+        drop(guard);
+        drop(eq);
+        // Tap post-DSP audio so the visualizer matches what you hear.
+        self.spectrum.feed_interleaved(output);
     }
 }
 
@@ -88,6 +99,8 @@ impl OutputDevice {
         let config: StreamConfig = supported.into();
         let sample_rate = config.sample_rate.0;
         let channels = config.channels as usize;
+        buffer.sample_rate.store(sample_rate, Ordering::Relaxed);
+        buffer.spectrum.set_channels(channels);
         let buffer_cb = Arc::clone(&buffer);
 
         let stream = match sample_format {
@@ -142,13 +155,17 @@ fn build_i16_stream(
     buffer: Arc<SharedBuffer>,
 ) -> Result<Stream, AppError> {
     let err_fn = |err| eprintln!("Audio stream error: {err}");
+    // Pre-allocate once per stream (not per callback).
+    let mut temporary = vec![0.0_f32; 0];
     device
         .build_output_stream(
             config,
             move |data: &mut [i16], _| {
-                let mut temporary = vec![0.0_f32; data.len()];
+                if temporary.len() != data.len() {
+                    temporary.resize(data.len(), 0.0);
+                }
                 buffer.pop_into(&mut temporary);
-                for (out, sample) in data.iter_mut().zip(temporary.into_iter()) {
+                for (out, sample) in data.iter_mut().zip(temporary.iter()) {
                     let clamped = sample.clamp(-1.0, 1.0);
                     *out = (clamped * i16::MAX as f32) as i16;
                 }

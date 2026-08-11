@@ -76,12 +76,28 @@ describe("settings schema", () => {
         preampDb: -1.5,
         eqEnabled: true,
         eqBassDb: 2,
+        eqBands: [2, 1.5, 1, 0, 0, 0, 0, 0.5, 1, 1],
+        eqQ: 1.2,
+        eqPresetId: "bass-boost",
         crossfadeEnabled: true,
         crossfadeSeconds: 4,
       },
     });
     expect(settings.playback.replayGainMode).toBe("track");
     expect(settings.playback.crossfadeSeconds).toBe(4);
+    expect(settings.playback.eqBands).toHaveLength(10);
+    expect(settings.playback.eqQ).toBe(1.2);
+  });
+
+  it("fills default eq bands when missing", () => {
+    const { eqBands: _omit, ...playbackRest } = defaultSettings.playback;
+    const settings = validateSettings({
+      ...defaultSettings,
+      playback: playbackRest,
+    });
+    expect(settings.playback.eqBands).toEqual([
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ]);
   });
 
   it("rejects invalid replay gain mode", () => {

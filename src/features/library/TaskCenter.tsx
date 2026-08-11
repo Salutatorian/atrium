@@ -28,6 +28,24 @@ function statusLabel(status: string): string {
   }
 }
 
+function fileNameFromPath(path: string): string {
+  const parts = path.split(/[/\\]/);
+  return parts[parts.length - 1] || path;
+}
+
+function friendlyErrorCode(code: string): string {
+  switch (code) {
+    case "io_error":
+      return "Couldn't open file";
+    case "metadata_error":
+      return "Couldn't read audio/tags";
+    case "ingest_error":
+      return "Couldn't save to library";
+    default:
+      return code;
+  }
+}
+
 export function TaskCenter() {
   const scanEvents = useLibraryStore((s) => s.scanEvents);
   const dismissScanEvent = useLibraryStore((s) => s.dismissScanEvent);
@@ -52,6 +70,7 @@ export function TaskCenter() {
         const finished = ["complete", "cancelled", "completed_with_errors"].includes(
           job.status,
         );
+        const samples = job.errorSamples ?? [];
 
         return (
           <div key={job.jobId} className="task-card">
@@ -93,6 +112,24 @@ export function TaskCenter() {
             </div>
             {job.currentPath || job.message ? (
               <p className="task-card__path">{job.message || job.currentPath}</p>
+            ) : null}
+            {finished && samples.length > 0 ? (
+              <ul className="task-card__errors">
+                {samples.map((sample) => (
+                  <li key={`${sample.path}:${sample.code}`}>
+                    <strong title={sample.path}>{fileNameFromPath(sample.path)}</strong>
+                    <span>
+                      {friendlyErrorCode(sample.code)}
+                      {sample.message ? ` — ${sample.message}` : ""}
+                    </span>
+                  </li>
+                ))}
+                {job.errors > samples.length ? (
+                  <li className="task-card__errors-more">
+                    +{job.errors - samples.length} more
+                  </li>
+                ) : null}
+              </ul>
             ) : null}
             {!finished ? (
               <div className="task-card__actions">

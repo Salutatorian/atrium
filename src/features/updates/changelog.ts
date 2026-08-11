@@ -1,8 +1,8 @@
 /**
- * Home "What's new" showcase.
+ * In-app changelog / "What's new".
  *
- * When shipping UI/product changes, append a new release here (newest first).
- * Keep kinds consistent so the Home showcase stays predictable and theme-safe.
+ * Shown after updates (modal) and permanently under Settings → About.
+ * Keep kinds consistent so the showcase stays predictable and theme-safe.
  */
 
 export type UpdateKind =
@@ -39,6 +39,40 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
+  {
+    id: "2026-08-v1-5-2",
+    version: "1.5.2",
+    title: "Atrium 1.5.2",
+    date: "2026-08-11",
+    summary:
+      "Soundbars, fonts, a real 10-band EQ, playback shortcuts, and library polish.",
+    changes: [
+      {
+        kind: "add",
+        text: "Beat-reactive soundbars behind the player with 18 styles (Settings → Appearance)",
+      },
+      {
+        kind: "add",
+        text: "70+ UI and heading fonts you can switch across the whole app",
+      },
+      {
+        kind: "add",
+        text: "10-band graphic EQ with 20 presets, preamp, and adjustable Q (Settings → Audio)",
+      },
+      {
+        kind: "add",
+        text: "Playback shortcuts: Ctrl/⌘+J K L, arrows, Space, plus media keys — listed in Settings → Shortcuts",
+      },
+      {
+        kind: "improve",
+        text: "Library jumps to the playing song; denser Compact vs Comfortable spacing; clearer import error details",
+      },
+      {
+        kind: "polish",
+        text: "Repeat-one shows a Spotify-style 1; double-click play without ugly text highlight (right-click or Alt to copy)",
+      },
+    ],
+  },
   {
     id: "2026-08-v1-5-1",
     version: "1.5.1",

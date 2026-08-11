@@ -10,7 +10,22 @@ import {
 import { BrandLogo } from "../../app/shell/BrandLogo";
 import { Tooltip } from "../../components/Tooltip";
 import { isTauriRuntime } from "../../services/tauri";
+import {
+  APP_FONTS,
+  DEFAULT_HEADING_FONT_ID,
+  DEFAULT_UI_FONT_ID,
+} from "../themes/font-catalog";
+import { VISUALIZER_PRESETS } from "../visualizer/catalog";
+import {
+  bandsMatchPreset,
+  EQ_FREQUENCY_LABELS,
+  EQ_PRESETS,
+  getEqPreset,
+  normalizeEqBands,
+} from "../audio/eq-presets";
+import { getShortcutCatalog } from "../shortcuts/catalog";
 import { ThemesStudio } from "../themes/ThemesStudio";
+import { UpdatesShowcase } from "../updates/UpdatesShowcase";
 import { checkForAppUpdate } from "../updates/update-service";
 import { useSettingsStore } from "../../stores/settings-store";
 import type { AppSettings } from "./schema";
@@ -263,62 +278,188 @@ function PlaybackSettings() {
 function AudioSettings() {
   const settings = useSettingsStore((s) => s.settings);
   const patchPlayback = useSettingsStore((s) => s.patchPlayback);
+  const bands = normalizeEqBands(settings.playback.eqBands);
+  const enabled = settings.playback.eqEnabled;
+
+  function applyPreset(presetId: string) {
+    const preset = getEqPreset(presetId);
+    if (!preset) return;
+    void patchPlayback({
+      eqEnabled: true,
+      eqPresetId: preset.id,
+      eqBands: [...preset.bands],
+      eqQ: preset.q,
+      ...(preset.preampDb !== undefined ? { preampDb: preset.preampDb } : {}),
+    });
+  }
+
+  function setBand(index: number, value: number) {
+    const next = [...bands];
+    next[index] = value;
+    const matched = EQ_PRESETS.find(
+      (p) => p.id !== "custom" && bandsMatchPreset(next, p),
+    );
+    void patchPlayback({
+      eqBands: next,
+      eqPresetId: matched?.id ?? "custom",
+      eqEnabled: true,
+    });
+  }
+
+  function resetFlat() {
+    applyPreset("flat");
+  }
 
   return (
-    <div className="settings-stack">
-      <h2 className="settings-section-title">Audio</h2>
+    <div className="settings-stack settings-stack--eq">
+      <h2 className="settings-section-title">Equalizer</h2>
+      <p className="settings-note">
+        10-band peaking EQ with 20 presets. Drag any band to go custom — tweak
+        Q for wider or narrower cuts/boosts.
+      </p>
+
       <label className="settings-field settings-field--checkbox">
-        <span>3-band EQ</span>
+        <span>Enable EQ</span>
         <input
           type="checkbox"
-          checked={settings.playback.eqEnabled}
+          checked={enabled}
           onChange={(event) => {
             void patchPlayback({ eqEnabled: event.target.checked });
           }}
         />
       </label>
+
       <label className="settings-field">
-        <span>Bass ({settings.playback.eqBassDb.toFixed(1)} dB)</span>
+        <span>Preset</span>
+        <select
+          value={settings.playback.eqPresetId}
+          disabled={!enabled && settings.playback.eqPresetId === "flat"}
+          onChange={(event) => {
+            const id = event.target.value;
+            if (id === "custom") {
+              void patchPlayback({ eqPresetId: "custom", eqEnabled: true });
+              return;
+            }
+            applyPreset(id);
+          }}
+        >
+          {EQ_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name}
+            </option>
+          ))}
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <p className="settings-note">
+        {getEqPreset(settings.playback.eqPresetId)?.description ??
+          "Your hand-tuned curve"}
+      </p>
+
+      <label className="settings-field">
+        <span>Preamp ({settings.playback.preampDb.toFixed(1)} dB)</span>
         <input
           type="range"
           min={-12}
           max={12}
           step={0.5}
-          value={settings.playback.eqBassDb}
-          disabled={!settings.playback.eqEnabled}
+          value={settings.playback.preampDb}
+          disabled={!enabled}
           onChange={(event) => {
-            void patchPlayback({ eqBassDb: Number(event.target.value) });
+            void patchPlayback({
+              preampDb: Number(event.target.value),
+              eqPresetId: "custom",
+            });
           }}
         />
       </label>
+
       <label className="settings-field">
-        <span>Mid ({settings.playback.eqMidDb.toFixed(1)} dB)</span>
+        <span>
+          Bandwidth / Q ({settings.playback.eqQ.toFixed(2)}) — lower = wider
+        </span>
         <input
           type="range"
-          min={-12}
-          max={12}
-          step={0.5}
-          value={settings.playback.eqMidDb}
-          disabled={!settings.playback.eqEnabled}
+          min={0.3}
+          max={4}
+          step={0.05}
+          value={settings.playback.eqQ}
+          disabled={!enabled}
           onChange={(event) => {
-            void patchPlayback({ eqMidDb: Number(event.target.value) });
+            void patchPlayback({
+              eqQ: Number(event.target.value),
+              eqPresetId: "custom",
+            });
           }}
         />
       </label>
-      <label className="settings-field">
-        <span>Treble ({settings.playback.eqTrebleDb.toFixed(1)} dB)</span>
-        <input
-          type="range"
-          min={-12}
-          max={12}
-          step={0.5}
-          value={settings.playback.eqTrebleDb}
-          disabled={!settings.playback.eqEnabled}
-          onChange={(event) => {
-            void patchPlayback({ eqTrebleDb: Number(event.target.value) });
+
+      <div
+        className={cn("eq-board", !enabled && "eq-board--disabled")}
+        aria-label="10-band equalizer"
+      >
+        <div className="eq-board__scale" aria-hidden="true">
+          <span>+12</span>
+          <span>0</span>
+          <span>−12</span>
+        </div>
+        <div className="eq-board__bands">
+          {EQ_FREQUENCY_LABELS.map((label, index) => (
+            <label key={label} className="eq-band">
+              <span className="eq-band__value">
+                {(bands[index] ?? 0) > 0 ? "+" : ""}
+                {(bands[index] ?? 0).toFixed(1)}
+              </span>
+              <input
+                type="range"
+                className="eq-band__slider"
+                min={-12}
+                max={12}
+                step={0.5}
+                value={bands[index] ?? 0}
+                disabled={!enabled}
+                aria-label={`${label} Hz`}
+                onChange={(event) => {
+                  setBand(index, Number(event.target.value));
+                }}
+                onDoubleClick={() => setBand(index, 0)}
+              />
+              <span className="eq-band__freq">{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="eq-board__actions">
+        <button
+          type="button"
+          className="text-button"
+          disabled={!enabled}
+          onClick={resetFlat}
+        >
+          Reset to flat
+        </button>
+        <button
+          type="button"
+          className="text-button"
+          disabled={!enabled}
+          onClick={() => {
+            void patchPlayback({
+              eqBands: bands.map(() => 0),
+              eqQ: 1,
+              preampDb: 0,
+              eqPresetId: "flat",
+            });
           }}
-        />
-      </label>
+        >
+          Zero preamp + Q
+        </button>
+      </div>
+
+      <p className="settings-note">
+        Tip: double-click a band to zero it. Preamp helps avoid clipping when
+        boosting.
+      </p>
     </div>
   );
 }
@@ -345,9 +486,9 @@ function AppearanceSettings({
             });
           }}
         >
-          <option value="compact">Compact</option>
-          <option value="comfortable">Comfortable</option>
-          <option value="spacious">Spacious</option>
+          <option value="compact">Compact — tight lists & smaller type</option>
+          <option value="comfortable">Comfortable — default spacing</option>
+          <option value="spacious">Spacious — roomy rows & larger hits</option>
         </select>
       </label>
       <label className="settings-field">
@@ -365,6 +506,28 @@ function AppearanceSettings({
           <option value="full-width">Full width</option>
         </select>
       </label>
+      <label className="settings-field">
+        <span>Soundbars</span>
+        <select
+          value={settings.appearance.visualizerStyle}
+          onChange={(event) => {
+            void patchAppearance({
+              visualizerStyle: event.target
+                .value as AppSettings["appearance"]["visualizerStyle"],
+            });
+          }}
+        >
+          {VISUALIZER_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="settings-note">
+        Beat-reactive bars sit behind the player. Default is Classic blocks —
+        pick any of the {VISUALIZER_PRESETS.length - 1} styles, or Off.
+      </p>
       <label className="settings-field">
         <span>Window mode</span>
         <select
@@ -409,6 +572,74 @@ function AppearanceSettings({
           <option value="no-preference">Prefer motion</option>
         </select>
       </label>
+
+      <h2 className="settings-section-title">Fonts</h2>
+      <p className="settings-note">
+        Changes the typeface across the whole app. Google fonts download the
+        first time you pick them (needs network once).
+      </p>
+      <label className="settings-field">
+        <span>UI font</span>
+        <select
+          value={settings.appearance.uiFontId}
+          onChange={(event) => {
+            void patchAppearance({ uiFontId: event.target.value });
+          }}
+          style={{
+            fontFamily:
+              APP_FONTS.find((f) => f.id === settings.appearance.uiFontId)
+                ?.stack ?? "inherit",
+          }}
+        >
+          {APP_FONTS.map((font) => (
+            <option key={font.id} value={font.id}>
+              {font.name}
+              {font.source === "system"
+                ? " · system"
+                : font.source === "bundled"
+                  ? " · built-in"
+                  : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="settings-field">
+        <span>Heading font</span>
+        <select
+          value={settings.appearance.headingFontId}
+          onChange={(event) => {
+            void patchAppearance({ headingFontId: event.target.value });
+          }}
+          style={{
+            fontFamily:
+              APP_FONTS.find((f) => f.id === settings.appearance.headingFontId)
+                ?.stack ?? "inherit",
+          }}
+        >
+          {APP_FONTS.map((font) => (
+            <option key={font.id} value={font.id}>
+              {font.name}
+              {font.source === "system"
+                ? " · system"
+                : font.source === "bundled"
+                  ? " · built-in"
+                  : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button
+        type="button"
+        className="text-button"
+        onClick={() => {
+          void patchAppearance({
+            uiFontId: DEFAULT_UI_FONT_ID,
+            headingFontId: DEFAULT_HEADING_FONT_ID,
+          });
+        }}
+      >
+        Reset fonts to default
+      </button>
 
       <div className="settings-theme-studio">
         <div className="settings-theme-studio__header">
@@ -495,20 +726,40 @@ function LyricsSettings() {
 }
 
 function ShortcutsSettings() {
+  const groups = getShortcutCatalog();
+
   return (
-    <div className="settings-stack">
+    <div className="settings-stack settings-stack--shortcuts">
       <h2 className="settings-section-title">Shortcuts</h2>
-      <ul className="settings-shortcuts">
-        <li>
-          <kbd>Space</kbd> Play / pause
-        </li>
-        <li>
-          <kbd>Ctrl</kbd> + <kbd>K</kbd> Search
-        </li>
-        <li>
-          <kbd>Esc</kbd> Close drawer / now playing
-        </li>
-      </ul>
+      <p className="settings-note">
+        Works while Atrium is focused. Letter shortcuts use physical keys, so
+        they stay on the same positions across keyboard layouts. On Mac, Ctrl
+        chords use ⌘.
+      </p>
+      {groups.map((group) => (
+        <div key={group.id} className="settings-shortcuts-group">
+          <h3 className="settings-shortcuts-group__title">{group.title}</h3>
+          <ul className="settings-shortcuts">
+            {group.items.map((item) => (
+              <li key={item.id}>
+                <span className="settings-shortcuts__action">{item.action}</span>
+                <span className="settings-shortcuts__keys">
+                  {item.labels.map((chord, index) => (
+                    <span key={`${item.id}-${index}`} className="settings-shortcuts__chord">
+                      {index > 0 ? (
+                        <span className="settings-shortcuts__or">or</span>
+                      ) : null}
+                      {chord.map((part) => (
+                        <kbd key={`${item.id}-${index}-${part}`}>{part}</kbd>
+                      ))}
+                    </span>
+                  ))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }
@@ -598,6 +849,14 @@ function AboutSettings() {
       <p className="settings-note settings-note--mono">
         {APP_GITHUB_URL.replace(/^https:\/\//, "")}
       </p>
+
+      <h2 className="settings-section-title">What’s new</h2>
+      <p className="settings-note">
+        Bugs, fixes, and new features for this version and earlier releases.
+      </p>
+      <div className="settings-changelog">
+        <UpdatesShowcase forceShow />
+      </div>
 
       <h2 className="settings-section-title">Support {APP_NAME}</h2>
       <p className="settings-note">

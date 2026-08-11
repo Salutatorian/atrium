@@ -16,6 +16,7 @@ import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { useSearchHotkey } from "../../hooks/use-search-hotkey";
 import { useShellModeKeys } from "../../hooks/use-shell-mode-keys";
 import { useSystemTheme } from "../../hooks/use-system-theme";
+import { useAppFonts } from "../../hooks/use-app-fonts";
 import { useSettingsStore } from "../../stores/settings-store";
 import { cn } from "../../utils/cn";
 import { Inspector } from "./Inspector";
@@ -23,6 +24,7 @@ import { NavRail } from "./NavRail";
 import { PlayerBar } from "./PlayerBar";
 import { TitleBar } from "./TitleBar";
 import { Workspace } from "./Workspace";
+import { PlayerVisualizer } from "../../features/visualizer/PlayerVisualizer";
 
 type AppShellProps = {
   appName: string;
@@ -40,6 +42,7 @@ export function AppShell({ appName }: AppShellProps) {
   useShellModeKeys();
   useSearchHotkey();
   useAppUpdater();
+  useAppFonts();
 
   const mini = shellMode === "mini";
   const immersive = shellMode === "immersive";
@@ -86,7 +89,10 @@ export function AppShell({ appName }: AppShellProps) {
           )}
         </div>
 
-        <PlayerBar reducedMotion={reducedMotion} />
+        <div className="player-dock">
+          <PlayerVisualizer reducedMotion={reducedMotion} />
+          <PlayerBar reducedMotion={reducedMotion} />
+        </div>
         <YearLookbackAutoOpen />
         <UpdateToast />
         <PostUpdateDialog />

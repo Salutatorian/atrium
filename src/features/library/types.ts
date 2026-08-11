@@ -68,6 +68,14 @@ export type ScanProgressEvent = {
   errors: number;
   currentPath?: string | null;
   message?: string | null;
+  /** Failed files from this scan (when status is completed_with_errors). */
+  errorSamples?: ImportErrorSample[];
+};
+
+export type ImportErrorSample = {
+  path: string;
+  code: string;
+  message: string;
 };
 
 export type ScanJobSummary = {

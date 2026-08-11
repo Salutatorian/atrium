@@ -4,7 +4,15 @@ import {
   playerPrevious,
   playerToggle,
 } from "../features/player/api";
+import { matchShortcutAction } from "../features/shortcuts/catalog";
 import { usePlayerStore } from "../stores/player-store";
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName?.toLowerCase();
+  return tag === "input" || tag === "textarea" || el.isContentEditable;
+}
 
 /** Window-focused media key / transport shortcuts. */
 export function useMediaKeys() {
@@ -12,28 +20,21 @@ export function useMediaKeys() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      const target = event.target as HTMLElement | null;
-      const tag = target?.tagName?.toLowerCase();
-      if (tag === "input" || tag === "textarea" || target?.isContentEditable) {
+      if (isTypingTarget(event.target)) return;
+
+      if (matchShortcutAction(event, "play-pause")) {
+        event.preventDefault();
+        void playerToggle().then(applySnapshot);
         return;
       }
-
-      switch (event.code) {
-        case "Space":
-        case "MediaPlayPause":
-          event.preventDefault();
-          void playerToggle().then(applySnapshot);
-          break;
-        case "MediaTrackNext":
-          event.preventDefault();
-          void playerNext().then(applySnapshot);
-          break;
-        case "MediaTrackPrevious":
-          event.preventDefault();
-          void playerPrevious().then(applySnapshot);
-          break;
-        default:
-          break;
+      if (matchShortcutAction(event, "next")) {
+        event.preventDefault();
+        void playerNext().then(applySnapshot);
+        return;
+      }
+      if (matchShortcutAction(event, "previous")) {
+        event.preventDefault();
+        void playerPrevious().then(applySnapshot);
       }
     }
 

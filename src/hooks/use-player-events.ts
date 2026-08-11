@@ -2,9 +2,11 @@ import { useEffect } from "react";
 import {
   onPlayerError,
   onPlayerPosition,
+  onPlayerSpectrum,
   onQueueChanged,
   onTrackChanged,
 } from "../features/player/api";
+import { pushSpectrumFrame } from "../features/visualizer/spectrum-bus";
 import { isTauriRuntime } from "../services/tauri";
 import { usePlayerStore } from "../stores/player-store";
 
@@ -50,6 +52,18 @@ export function usePlayerEvents() {
 
     void onPlayerError((message) => {
       setError(message);
+    }).then((fn) => {
+      if (cancelled) fn();
+      else unsubs.push(fn);
+    });
+
+    void onPlayerSpectrum((frame) => {
+      pushSpectrumFrame({
+        bands: frame.bands ?? [],
+        bass: frame.bass ?? 0,
+        beat: frame.beat ?? 0,
+        energy: frame.energy ?? 0,
+      });
     }).then((fn) => {
       if (cancelled) fn();
       else unsubs.push(fn);

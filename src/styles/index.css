@@ -17,6 +17,14 @@ body,
   width: 100%;
   height: 100%;
   margin: 0;
+  background-color: var(--color-app-background);
+  background: var(--color-app-background);
+  overflow: hidden;
+}
+
+/* Kill WebView2 edge hairlines / light host peeking past the shell */
+html {
+  color-scheme: dark light;
 }
 
 body {
@@ -26,10 +34,8 @@ body {
   letter-spacing: var(--letter-spacing);
   line-height: var(--line-height);
   color: var(--color-primary-text);
-  background: var(--color-app-background);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow: hidden;
 }
 
 button,

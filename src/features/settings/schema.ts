@@ -30,9 +30,18 @@ export const appSettingsSchema = z.object({
     replayGainMode: z.enum(["off", "track", "album"]).default("off"),
     preampDb: z.number().min(-12).max(12).default(0),
     eqEnabled: z.boolean().default(false),
+    /** Legacy 3-band (kept for old settings files). */
     eqBassDb: z.number().min(-12).max(12).default(0),
     eqMidDb: z.number().min(-12).max(12).default(0),
     eqTrebleDb: z.number().min(-12).max(12).default(0),
+    /** 10-band graphic EQ gains in dB (−12…+12). */
+    eqBands: z
+      .array(z.number().min(-12).max(12))
+      .length(10)
+      .default([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    /** Peaking filter Q / bandwidth (lower = wider). */
+    eqQ: z.number().min(0.3).max(4).default(1),
+    eqPresetId: z.string().min(1).default("flat"),
     crossfadeEnabled: z.boolean().default(false),
     crossfadeSeconds: z.number().int().min(0).max(12).default(3),
   }),
@@ -46,6 +55,34 @@ export const appSettingsSchema = z.object({
     inspectorOpen: z.boolean(),
     inspectorWidth: z.number().int().min(240).max(720),
     reducedMotion: z.enum(["system", "reduce", "no-preference"]),
+    /** App-wide UI font (Settings → Appearance). */
+    uiFontId: z.string().min(1).default("dm-sans"),
+    /** App-wide heading / display font. */
+    headingFontId: z.string().min(1).default("fraunces"),
+    /** Bottom player soundbar style. */
+    visualizerStyle: z
+      .enum([
+        "off",
+        "classic-blocks",
+        "accent-bars",
+        "soft-dots",
+        "rainbow-blocks",
+        "neon-segments",
+        "cyan-grid",
+        "gold-grid",
+        "fade-dots",
+        "peak-magenta",
+        "peak-cyan",
+        "peak-gradient",
+        "mirror-bars",
+        "wave-ribbon",
+        "wave-neon",
+        "pulse-bars",
+        "mono-leds",
+        "fire-bars",
+        "ice-bars",
+      ])
+      .default("classic-blocks"),
   }),
   lyrics: z.object({
     preferSynchronized: z.boolean(),
@@ -93,6 +130,9 @@ export const defaultSettings: AppSettings = {
     eqBassDb: 0,
     eqMidDb: 0,
     eqTrebleDb: 0,
+    eqBands: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    eqQ: 1,
+    eqPresetId: "flat",
     crossfadeEnabled: false,
     crossfadeSeconds: 3,
   },
@@ -106,6 +146,9 @@ export const defaultSettings: AppSettings = {
     inspectorOpen: false,
     inspectorWidth: 320,
     reducedMotion: "system",
+    uiFontId: "dm-sans",
+    headingFontId: "fraunces",
+    visualizerStyle: "classic-blocks",
   },
   lyrics: {
     preferSynchronized: true,

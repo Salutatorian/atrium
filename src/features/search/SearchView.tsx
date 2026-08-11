@@ -178,7 +178,7 @@ export function SearchView() {
 
       {!trimmed ? (
         <p className="empty-panel__detail">
-          Start typing, or press Ctrl+K anytime to jump here.
+          Start typing, or press Ctrl+F (⌘F on Mac) anytime to jump here.
         </p>
       ) : flat.length === 0 ? (
         <p className="empty-panel__detail">No matches for “{query.trim()}”.</p>

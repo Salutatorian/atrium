@@ -59,12 +59,19 @@ pub struct PlaybackSettings {
     pub preamp_db: f64,
     #[serde(default)]
     pub eq_enabled: bool,
+    /// Legacy 3-band fields (migrated into eq_bands when non-zero).
     #[serde(default)]
     pub eq_bass_db: f64,
     #[serde(default)]
     pub eq_mid_db: f64,
     #[serde(default)]
     pub eq_treble_db: f64,
+    #[serde(default = "default_eq_bands")]
+    pub eq_bands: Vec<f64>,
+    #[serde(default = "default_eq_q")]
+    pub eq_q: f64,
+    #[serde(default = "default_eq_preset_id")]
+    pub eq_preset_id: String,
     #[serde(default)]
     pub crossfade_enabled: bool,
     #[serde(default = "default_crossfade_seconds")]
@@ -77,6 +84,18 @@ fn default_rg_mode() -> String {
 
 fn default_crossfade_seconds() -> u32 {
     3
+}
+
+fn default_eq_bands() -> Vec<f64> {
+    vec![0.0; 10]
+}
+
+fn default_eq_q() -> f64 {
+    1.0
+}
+
+fn default_eq_preset_id() -> String {
+    "flat".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -92,10 +111,28 @@ pub struct AppearanceSettings {
     pub inspector_open: bool,
     pub inspector_width: u32,
     pub reduced_motion: String,
+    #[serde(default = "default_ui_font_id")]
+    pub ui_font_id: String,
+    #[serde(default = "default_heading_font_id")]
+    pub heading_font_id: String,
+    #[serde(default = "default_visualizer_style")]
+    pub visualizer_style: String,
 }
 
 fn default_shell_mode() -> String {
     "normal".into()
+}
+
+fn default_ui_font_id() -> String {
+    "dm-sans".into()
+}
+
+fn default_heading_font_id() -> String {
+    "fraunces".into()
+}
+
+fn default_visualizer_style() -> String {
+    "classic-blocks".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -148,6 +185,9 @@ impl Default for AppSettings {
                 eq_bass_db: 0.0,
                 eq_mid_db: 0.0,
                 eq_treble_db: 0.0,
+                eq_bands: default_eq_bands(),
+                eq_q: 1.0,
+                eq_preset_id: "flat".into(),
                 crossfade_enabled: false,
                 crossfade_seconds: 3,
             },
@@ -161,6 +201,9 @@ impl Default for AppSettings {
                 inspector_open: false,
                 inspector_width: 320,
                 reduced_motion: "system".into(),
+                ui_font_id: "dm-sans".into(),
+                heading_font_id: "fraunces".into(),
+                visualizer_style: "classic-blocks".into(),
             },
             lyrics: LyricsSettings {
                 prefer_synchronized: true,
@@ -205,6 +248,26 @@ impl AppSettings {
                 "playback EQ/preamp values are out of range".into(),
             ));
         }
+        if !(0.3..=4.0).contains(&self.playback.eq_q) {
+            return Err(AppError::Message(
+                "playback.eqQ must be between 0.3 and 4".into(),
+            ));
+        }
+        if self.playback.eq_bands.len() != 10 {
+            return Err(AppError::Message(
+                "playback.eqBands must contain exactly 10 bands".into(),
+            ));
+        }
+        if self
+            .playback
+            .eq_bands
+            .iter()
+            .any(|g| !(-12.0..=12.0).contains(g))
+        {
+            return Err(AppError::Message(
+                "playback.eqBands values must be between -12 and 12 dB".into(),
+            ));
+        }
         if self.playback.crossfade_seconds > 12 {
             return Err(AppError::Message(
                 "playback.crossfadeSeconds must be <= 12".into(),
@@ -242,6 +305,33 @@ impl AppSettings {
         if !matches!(motion, "system" | "reduce" | "no-preference") {
             return Err(AppError::Message(
                 "appearance.reducedMotion must be system, reduce, or no-preference".into(),
+            ));
+        }
+        let viz = self.appearance.visualizer_style.as_str();
+        if !matches!(
+            viz,
+            "off"
+                | "classic-blocks"
+                | "accent-bars"
+                | "soft-dots"
+                | "rainbow-blocks"
+                | "neon-segments"
+                | "cyan-grid"
+                | "gold-grid"
+                | "fade-dots"
+                | "peak-magenta"
+                | "peak-cyan"
+                | "peak-gradient"
+                | "mirror-bars"
+                | "wave-ribbon"
+                | "wave-neon"
+                | "pulse-bars"
+                | "mono-leds"
+                | "fire-bars"
+                | "ice-bars"
+        ) {
+            return Err(AppError::Message(
+                "appearance.visualizerStyle is not a known soundbar style".into(),
             ));
         }
         Ok(())

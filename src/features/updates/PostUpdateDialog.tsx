@@ -1,7 +1,11 @@
 import { BrandLogo } from "../../app/shell/BrandLogo";
-import { UPDATE_KIND_LABEL, type UpdateRelease } from "./changelog";
 import { useUpdateStore } from "../../stores/update-store";
 import { cn } from "../../utils/cn";
+import {
+  UPDATE_KIND_LABEL,
+  writeSeenReleaseId,
+  type UpdateRelease,
+} from "./changelog";
 
 export function PostUpdateDialog() {
   const release = useUpdateStore((s) => s.postUpdateRelease);
@@ -10,7 +14,12 @@ export function PostUpdateDialog() {
   if (!release) return null;
 
   return (
-    <div className="post-update" role="dialog" aria-label="What's new">
+    <div
+      className="post-update"
+      role="dialog"
+      aria-modal="true"
+      aria-label="What's new"
+    >
       <div className="post-update__card">
         <header className="post-update__header">
           <BrandLogo size="md" className="post-update__logo" />
@@ -23,7 +32,10 @@ export function PostUpdateDialog() {
           <button
             type="button"
             className="button-primary"
-            onClick={() => clearPostUpdate()}
+            onClick={() => {
+              writeSeenReleaseId(release.id);
+              clearPostUpdate();
+            }}
           >
             Got it
           </button>

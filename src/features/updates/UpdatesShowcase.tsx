@@ -1,103 +1,51 @@
 import { useState } from "react";
 import {
   latestRelease,
-  readSeenReleaseId,
   UPDATE_KIND_LABEL,
   UPDATE_RELEASES,
-  writeSeenReleaseId,
   type UpdateKind,
   type UpdateRelease,
 } from "./changelog";
 import { cn } from "../../utils/cn";
 
 type UpdatesShowcaseProps = {
-  /** When true, expand history even if the latest release was dismissed. */
+  /** Kept for callers; Settings always shows the full notes panel. */
   forceShow?: boolean;
 };
 
-export function UpdatesShowcase({ forceShow = false }: UpdatesShowcaseProps) {
+/** Release notes panel — used in Settings → About. */
+export function UpdatesShowcase(_props: UpdatesShowcaseProps = {}) {
   const latest = latestRelease();
-  const [seenId, setSeenId] = useState<string | null>(() => readSeenReleaseId());
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
 
   if (!latest) return null;
 
-  const isNew = seenId !== latest.id;
-  if (!isNew && !forceShow && !historyOpen) {
-    return (
-      <section className="updates-showcase updates-showcase--quiet" aria-label="Updates">
-        <button
-          type="button"
-          className="text-button"
-          onClick={() => {
-            setHistoryOpen(true);
-            setExpanded(true);
-          }}
-        >
-          What’s new
-        </button>
-      </section>
-    );
-  }
-
-  const visible: UpdateRelease[] = historyOpen
-    ? UPDATE_RELEASES
-    : [latest];
+  const visible: UpdateRelease[] = historyOpen ? UPDATE_RELEASES : [latest];
 
   return (
     <section
-      className={cn(
-        "updates-showcase",
-        isNew && "updates-showcase--new",
-      )}
+      className="updates-showcase updates-showcase--settings"
       aria-label="What's new"
     >
       <header className="updates-showcase__header">
         <div>
-          <p className="updates-showcase__eyebrow">
-            {isNew ? "What’s new" : "Updates"}
-          </p>
-          <h2 className="updates-showcase__title">{latest.title}</h2>
+          <p className="updates-showcase__eyebrow">Release notes</p>
+          <h3 className="updates-showcase__title">{latest.title}</h3>
           <p className="updates-showcase__summary">{latest.summary}</p>
         </div>
         <div className="updates-showcase__meta">
           <span className="updates-showcase__version">v{latest.version}</span>
-          {isNew ? (
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => {
-                writeSeenReleaseId(latest.id);
-                setSeenId(latest.id);
-                setHistoryOpen(false);
-                setExpanded(false);
-              }}
-            >
-              Got it
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => {
-                setHistoryOpen(false);
-                setExpanded(false);
-              }}
-            >
-              Hide
-            </button>
-          )}
         </div>
       </header>
 
       {visible.map((release) => (
         <article key={release.id} className="updates-release">
           {historyOpen && release.id !== latest.id ? (
-            <h3 className="updates-release__title">
+            <h4 className="updates-release__title">
               {release.title}
               <span className="updates-release__date">{release.date}</span>
-            </h3>
+            </h4>
           ) : null}
           <ul className="updates-list">
             {(expanded || release.id !== latest.id
@@ -130,13 +78,25 @@ export function UpdatesShowcase({ forceShow = false }: UpdatesShowcaseProps) {
             Show all changes
           </button>
         ) : null}
-        {expanded && UPDATE_RELEASES.length > 1 && !historyOpen ? (
+        {UPDATE_RELEASES.length > 1 && !historyOpen ? (
           <button
             type="button"
             className="text-button"
-            onClick={() => setHistoryOpen(true)}
+            onClick={() => {
+              setHistoryOpen(true);
+              setExpanded(true);
+            }}
           >
             Earlier updates
+          </button>
+        ) : null}
+        {historyOpen ? (
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => setHistoryOpen(false)}
+          >
+            Show latest only
           </button>
         ) : null}
       </div>
