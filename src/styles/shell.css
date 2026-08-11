@@ -4304,7 +4304,7 @@
   position: fixed;
   right: 1.1rem;
   bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
-  z-index: 12;
+  z-index: 30;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 0.75rem 0.85rem;
@@ -4312,8 +4312,21 @@
   padding: 0.9rem 1rem;
   border: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
   border-radius: 12px;
-  background: color-mix(in oklab, var(--color-surface) 92%, transparent);
+  overflow: hidden;
+  isolation: isolate;
+  /* Opaque so the player dock never shows through */
+  background: color-mix(in oklab, var(--color-raised-background) 96%, var(--color-app-background));
   box-shadow: 0 16px 40px rgb(0 0 0 / 0.28);
+}
+
+.update-toast::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--color-app-background);
+  pointer-events: none;
 }
 
 .update-toast__logo {
