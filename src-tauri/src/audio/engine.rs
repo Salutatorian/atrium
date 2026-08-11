@@ -233,10 +233,15 @@ impl PlayerEngine {
     }
 
     pub fn set_shuffle(&self, enabled: bool) -> Result<(), AppError> {
+        // Apply sync so UI snapshot matches the toggle immediately.
+        self.state.queue.lock().set_shuffle(enabled);
         self.send(PlayerCommand::SetShuffle(enabled))
     }
 
     pub fn set_repeat(&self, mode: RepeatMode) -> Result<(), AppError> {
+        // Apply synchronously so the snapshot returned to the UI is correct
+        // (otherwise the worker lag resets the button and “repeat one” never sticks).
+        self.state.queue.lock().set_repeat(mode);
         self.send(PlayerCommand::SetRepeat(mode))
     }
 
@@ -429,11 +434,20 @@ fn run_player_worker(
                     buffer.muted.store(muted, Ordering::Relaxed);
                 }
                 PlayerCommand::SetShuffle(enabled) => {
-                    state.queue.lock().set_shuffle(enabled);
+                    let mut queue = state.queue.lock();
+                    // May already be applied synchronously for an accurate snapshot.
+                    if queue.shuffle() != enabled {
+                        queue.set_shuffle(enabled);
+                    }
+                    drop(queue);
                     emit_queue_changed(&app, &state);
                 }
                 PlayerCommand::SetRepeat(mode) => {
-                    state.queue.lock().set_repeat(mode);
+                    let mut queue = state.queue.lock();
+                    if queue.repeat() != mode {
+                        queue.set_repeat(mode);
+                    }
+                    drop(queue);
                     emit_queue_changed(&app, &state);
                 }
             }
@@ -555,8 +569,10 @@ fn run_player_worker(
             if matches!(status, PlayerStatus::Playing) {
                 let frame = buffer.spectrum.compute(out_rate);
                 let _ = app.emit(PLAYER_SPECTRUM, frame);
-            } else if matches!(status, PlayerStatus::Paused | PlayerStatus::Stopped) {
-                // Emit decaying silence so bars fall smoothly when paused/stopped
+            }
+            // Paused: do not emit — frontend freezes the last frame.
+            // Stopped: emit once-ish decaying silence so bars clear.
+            else if matches!(status, PlayerStatus::Stopped) {
                 let frame = buffer.spectrum.compute(out_rate);
                 let _ = app.emit(PLAYER_SPECTRUM, frame);
             }

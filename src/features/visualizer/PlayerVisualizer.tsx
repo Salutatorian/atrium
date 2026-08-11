@@ -4,7 +4,11 @@ import { useSettingsStore } from "../../stores/settings-store";
 import { cn } from "../../utils/cn";
 import { getVisualizerPreset } from "./catalog";
 import { drawVisualizer } from "./draw";
-import { getSpectrumFrame, subscribeSpectrum } from "./spectrum-bus";
+import {
+  getSpectrumFrame,
+  subscribeSpectrum,
+  type SpectrumFrame,
+} from "./spectrum-bus";
 
 type PlayerVisualizerProps = {
   reducedMotion: boolean;
@@ -20,14 +24,23 @@ function readAccent(): string {
   );
 }
 
+function cloneFrame(frame: SpectrumFrame): SpectrumFrame {
+  return {
+    bands: frame.bands.slice(),
+    bass: frame.bass,
+    beat: frame.beat,
+    energy: frame.energy,
+  };
+}
+
 export function PlayerVisualizer({
   reducedMotion,
   className,
 }: PlayerVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const peaksRef = useRef(new Float32Array(64));
+  const frozenRef = useRef<SpectrumFrame | null>(null);
   const styleId = useSettingsStore((s) => s.settings.appearance.visualizerStyle);
-  const barStyle = useSettingsStore((s) => s.settings.appearance.playerBarStyle);
   const status = usePlayerStore((s) => s.status);
   const preset = getVisualizerPreset(styleId);
 
@@ -61,7 +74,6 @@ export function PlayerVisualizer({
 
     const tick = (now: number) => {
       if (!alive) return;
-      // Cap draw rate; spectrum already ~55 Hz
       if (now - lastDraw >= (reducedMotion ? 48 : 16)) {
         lastDraw = now;
         const parent = canvas.parentElement;
@@ -70,12 +82,26 @@ export function PlayerVisualizer({
         if (peaksRef.current.length < preset.barCount) {
           peaksRef.current = new Float32Array(preset.barCount);
         }
+
+        const live = getSpectrumFrame();
+        let frame = live;
+        if (status === "playing") {
+          frozenRef.current = cloneFrame(live);
+          frame = live;
+        } else if (status === "paused" && frozenRef.current) {
+          // Hold the last audible bars — don't collapse to silence.
+          frame = frozenRef.current;
+        } else if (status === "stopped") {
+          frozenRef.current = null;
+          frame = live;
+        }
+
         drawVisualizer({
           ctx,
           width,
           height,
           preset,
-          frame: getSpectrumFrame(),
+          frame,
           accent: readAccent(),
           peaks: peaksRef.current,
         });
@@ -84,7 +110,6 @@ export function PlayerVisualizer({
     };
 
     const unsub = subscribeSpectrum(() => {
-      // Wake immediately on new audio frame
       if (!raf) raf = requestAnimationFrame(tick);
     });
 
@@ -102,11 +127,7 @@ export function PlayerVisualizer({
 
   return (
     <div
-      className={cn(
-        "player-visualizer",
-        barStyle === "full-width" && "player-visualizer--full-width",
-        className,
-      )}
+      className={cn("player-visualizer", className)}
       aria-hidden="true"
     >
       <canvas ref={canvasRef} className="player-visualizer__canvas" />

@@ -24,7 +24,6 @@ import { NavRail } from "./NavRail";
 import { PlayerBar } from "./PlayerBar";
 import { TitleBar } from "./TitleBar";
 import { Workspace } from "./Workspace";
-import { PlayerVisualizer } from "../../features/visualizer/PlayerVisualizer";
 
 type AppShellProps = {
   appName: string;
@@ -90,7 +89,6 @@ export function AppShell({ appName }: AppShellProps) {
         </div>
 
         <div className="player-dock">
-          <PlayerVisualizer reducedMotion={reducedMotion} />
           <PlayerBar reducedMotion={reducedMotion} />
         </div>
         <YearLookbackAutoOpen />

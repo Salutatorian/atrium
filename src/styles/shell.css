@@ -1419,7 +1419,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(140px + var(--player-offset));
+  height: calc(100px + var(--player-offset));
   pointer-events: none;
 }
 
@@ -1429,31 +1429,31 @@
 
 .player-visualizer {
   position: absolute;
-  z-index: 1;
-  left: 50%;
-  /* Sit mostly above the player pill so bars stay visible */
-  bottom: calc(var(--player-offset) + 58px);
-  transform: translateX(-50%);
-  width: min(1480px, calc(100% - 2 * var(--shell-gap)));
-  height: 64px;
+  z-index: 0;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 100%;
   pointer-events: none;
-  opacity: 0.95;
+  opacity: 0.72;
+  /* Fade bars out before they reach controls / meta */
   mask-image: linear-gradient(
     to top,
-    transparent 0%,
-    black 22%,
-    black 100%
+    black 0%,
+    black 28%,
+    transparent 78%
   );
-}
-
-.player-visualizer--full-width {
-  width: calc(100% - 2 * var(--shell-gap));
 }
 
 .player-visualizer__canvas {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.player-bar > *:not(.player-visualizer) {
+  position: relative;
+  z-index: 1;
 }
 
 .player-bar--full-width {
@@ -4008,15 +4008,16 @@
 }
 
 .now-playing {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 7;
+  z-index: 25;
   display: grid;
   place-items: center;
   padding: 2rem;
   overflow: auto;
-  background: color-mix(in oklab, var(--color-app-background) 92%, transparent);
-  backdrop-filter: blur(16px);
+  overscroll-behavior: contain;
+  /* Fully opaque so Settings / Library cannot show through or scroll underneath */
+  background: var(--color-app-background);
 }
 
 .now-playing--lyrics {

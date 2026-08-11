@@ -23,6 +23,7 @@ export function NowPlayingOverlay() {
   const applySnapshot = usePlayerStore((s) => s.applySnapshot);
   const [lyricsOpen, setLyricsOpen] = useState(false);
   const lyricsRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
   const playing = status === "playing";
   const scrubMax = Math.max(durationMs, positionMs, 1);
@@ -39,9 +40,24 @@ export function NowPlayingOverlay() {
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
     }
+    // Stop the settings/workspace scroller underneath the focus view.
+    const workspace = document.getElementById("main-content");
+    const prevBody = document.body.style.overflow;
+    const prevWorkspace = workspace instanceof HTMLElement ? workspace.style.overflow : "";
+    document.body.style.overflow = "hidden";
+    if (workspace instanceof HTMLElement) workspace.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevBody;
+      if (workspace instanceof HTMLElement) workspace.style.overflow = prevWorkspace;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open, setOpen]);
+
+  useEffect(() => {
+    if (!open) return;
+    overlayRef.current?.focus();
+  }, [open]);
 
   useEffect(() => {
     if (!lyricsOpen) return;
@@ -55,9 +71,12 @@ export function NowPlayingOverlay() {
 
   return (
     <div
+      ref={overlayRef}
       className={cn("now-playing", lyricsOpen && "now-playing--lyrics")}
       role="dialog"
       aria-label="Now playing"
+      aria-modal="true"
+      tabIndex={-1}
     >
       <button
         type="button"

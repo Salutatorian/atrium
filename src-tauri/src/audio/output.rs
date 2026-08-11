@@ -59,7 +59,7 @@ impl SharedBuffer {
             for sample in output.iter_mut() {
                 *sample = 0.0;
             }
-            self.spectrum.feed_interleaved(output);
+            // Do not feed silence into the spectrum — keep the last audible frame frozen.
             return;
         }
         let muted = self.muted.load(Ordering::Relaxed);

@@ -19,6 +19,7 @@ import { usePlayerStore } from "../../stores/player-store";
 import { useShellStore } from "../../stores/shell-store";
 import { useSettingsStore } from "../../stores/settings-store";
 import { cn } from "../../utils/cn";
+import { PlayerVisualizer } from "../../features/visualizer/PlayerVisualizer";
 
 type PlayerBarProps = {
   reducedMotion: boolean;
@@ -115,6 +116,7 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
       role="region"
       aria-label="Playback"
     >
+      <PlayerVisualizer reducedMotion={reducedMotion} />
       <div className="player-bar__track">
         <button
           type="button"
@@ -462,9 +464,9 @@ function TransportGlyph({
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          {/* Spotify-style “1” for repeat track */}
+          {/* Clear “1” centered in the loop */}
           <path
-            d="M11.15 9.2V15h1.15V10.55h.05l1.55.55V10.2l-1.7-.95h-1.05Z"
+            d="M11.25 8.35V15.1h1.35V9.85h.04l1.85.7V9.45l-2.05-1.1h-1.19Z"
             fill="currentColor"
           />
         </svg>
