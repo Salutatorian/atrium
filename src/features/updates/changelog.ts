@@ -40,6 +40,36 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-08-v1-6-0",
+    version: "1.6.0",
+    title: "Atrium 1.6",
+    date: "2026-08-11",
+    summary:
+      "Player polish — soundbars stay in the bar, repeat-one works, and Now Playing actually focuses.",
+    changes: [
+      {
+        kind: "improve",
+        text: "Soundbars live inside the player pill so they no longer cover Settings or library content",
+      },
+      {
+        kind: "fix",
+        text: "Repeat one song sticks correctly and shows a clear “1” on the repeat button",
+      },
+      {
+        kind: "fix",
+        text: "Pausing freezes the last soundbar frame instead of wiping the visualizer",
+      },
+      {
+        kind: "fix",
+        text: "Clicking the track in the player opens a solid Now Playing view you can’t scroll through",
+      },
+      {
+        kind: "polish",
+        text: "Update toast is opaque; README badges for download, platforms, privacy, and license",
+      },
+    ],
+  },
+  {
     id: "2026-08-v1-5-2",
     version: "1.5.2",
     title: "Atrium 1.5.2",
