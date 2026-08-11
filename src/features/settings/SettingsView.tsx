@@ -506,10 +506,21 @@ function AppearanceSettings({
           <option value="full-width">Full width</option>
         </select>
       </label>
+      <label className="settings-field settings-field--checkbox">
+        <span>Show soundbars</span>
+        <input
+          type="checkbox"
+          checked={settings.appearance.visualizerEnabled}
+          onChange={(event) => {
+            void patchAppearance({ visualizerEnabled: event.target.checked });
+          }}
+        />
+      </label>
       <label className="settings-field">
-        <span>Soundbars</span>
+        <span>Soundbar style</span>
         <select
           value={settings.appearance.visualizerStyle}
+          disabled={!settings.appearance.visualizerEnabled}
           onChange={(event) => {
             void patchAppearance({
               visualizerStyle: event.target
@@ -517,16 +528,19 @@ function AppearanceSettings({
             });
           }}
         >
-          {VISUALIZER_PRESETS.map((preset) => (
-            <option key={preset.id} value={preset.id}>
-              {preset.name}
-            </option>
-          ))}
+          {VISUALIZER_PRESETS.filter((preset) => preset.id !== "off").map(
+            (preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.name}
+              </option>
+            ),
+          )}
         </select>
       </label>
       <p className="settings-note">
-        Beat-reactive bars sit behind the player. Default is Classic blocks —
-        pick any of the {VISUALIZER_PRESETS.length - 1} styles, or Off.
+        Tiny beat-reactive bars sit between Repeat and volume. On by default —
+        turn off above, or pick another of the{" "}
+        {VISUALIZER_PRESETS.length - 1} styles.
       </p>
       <label className="settings-field">
         <span>Window mode</span>

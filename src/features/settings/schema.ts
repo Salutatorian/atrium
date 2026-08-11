@@ -83,6 +83,8 @@ export const appSettingsSchema = z.object({
         "ice-bars",
       ])
       .default("classic-blocks"),
+    /** Tiny soundbars between repeat and volume. Default on. */
+    visualizerEnabled: z.boolean().default(true),
   }),
   lyrics: z.object({
     preferSynchronized: z.boolean(),
@@ -149,6 +151,7 @@ export const defaultSettings: AppSettings = {
     uiFontId: "dm-sans",
     headingFontId: "fraunces",
     visualizerStyle: "classic-blocks",
+    visualizerEnabled: true,
   },
   lyrics: {
     preferSynchronized: true,

@@ -117,6 +117,8 @@ pub struct AppearanceSettings {
     pub heading_font_id: String,
     #[serde(default = "default_visualizer_style")]
     pub visualizer_style: String,
+    #[serde(default = "default_visualizer_enabled")]
+    pub visualizer_enabled: bool,
 }
 
 fn default_shell_mode() -> String {
@@ -133,6 +135,10 @@ fn default_heading_font_id() -> String {
 
 fn default_visualizer_style() -> String {
     "classic-blocks".into()
+}
+
+fn default_visualizer_enabled() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -204,6 +210,7 @@ impl Default for AppSettings {
                 ui_font_id: "dm-sans".into(),
                 heading_font_id: "fraunces".into(),
                 visualizer_style: "classic-blocks".into(),
+                visualizer_enabled: true,
             },
             lyrics: LyricsSettings {
                 prefer_synchronized: true,

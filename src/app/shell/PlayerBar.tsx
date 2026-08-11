@@ -116,7 +116,6 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
       role="region"
       aria-label="Playback"
     >
-      <PlayerVisualizer reducedMotion={reducedMotion} />
       <div className="player-bar__track">
         <button
           type="button"
@@ -168,7 +167,9 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
       </div>
 
       <div className="player-bar__center">
-        <div className="player-bar__transport">
+        <div className="player-bar__transport-row">
+          <div className="player-bar__transport-spacer" aria-hidden="true" />
+          <div className="player-bar__transport">
           <Tooltip label={shuffle ? "Shuffle on" : "Shuffle off"} side="top">
             <button
               type="button"
@@ -253,6 +254,10 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
               />
             </button>
           </Tooltip>
+          </div>
+          <div className="player-bar__viz-slot">
+            <PlayerVisualizer reducedMotion={reducedMotion} />
+          </div>
         </div>
 
         <div className="player-bar__timeline">

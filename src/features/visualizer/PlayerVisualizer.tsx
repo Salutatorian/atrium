@@ -40,13 +40,17 @@ export function PlayerVisualizer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const peaksRef = useRef(new Float32Array(64));
   const frozenRef = useRef<SpectrumFrame | null>(null);
+  const statusRef = useRef(usePlayerStore.getState().status);
+  const enabled = useSettingsStore((s) => s.settings.appearance.visualizerEnabled);
   const styleId = useSettingsStore((s) => s.settings.appearance.visualizerStyle);
   const status = usePlayerStore((s) => s.status);
-  const preset = getVisualizerPreset(styleId);
+  const preset = getVisualizerPreset(styleId === "off" ? "classic-blocks" : styleId);
+
+  statusRef.current = status;
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || preset.id === "off") return;
+    if (!canvas || !enabled) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -59,8 +63,8 @@ export function PlayerVisualizer({
       const parent = canvas.parentElement;
       if (!parent) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const w = parent.clientWidth;
-      const h = parent.clientHeight;
+      const w = Math.max(1, parent.clientWidth);
+      const h = Math.max(1, parent.clientHeight);
       canvas.width = Math.max(1, Math.floor(w * dpr));
       canvas.height = Math.max(1, Math.floor(h * dpr));
       canvas.style.width = `${w}px`;
@@ -74,45 +78,45 @@ export function PlayerVisualizer({
 
     const tick = (now: number) => {
       if (!alive) return;
-      if (now - lastDraw >= (reducedMotion ? 48 : 16)) {
-        lastDraw = now;
-        const parent = canvas.parentElement;
-        const width = parent?.clientWidth ?? canvas.clientWidth;
-        const height = parent?.clientHeight ?? canvas.clientHeight;
-        if (peaksRef.current.length < preset.barCount) {
-          peaksRef.current = new Float32Array(preset.barCount);
-        }
-
-        const live = getSpectrumFrame();
-        let frame = live;
-        if (status === "playing") {
-          frozenRef.current = cloneFrame(live);
-          frame = live;
-        } else if (status === "paused" && frozenRef.current) {
-          // Hold the last audible bars — don't collapse to silence.
-          frame = frozenRef.current;
-        } else if (status === "stopped") {
-          frozenRef.current = null;
-          frame = live;
-        }
-
-        drawVisualizer({
-          ctx,
-          width,
-          height,
-          preset,
-          frame,
-          accent: readAccent(),
-          peaks: peaksRef.current,
-        });
-      }
       raf = requestAnimationFrame(tick);
+      if (now - lastDraw < (reducedMotion ? 48 : 16)) return;
+      lastDraw = now;
+
+      const parent = canvas.parentElement;
+      const width = parent?.clientWidth ?? canvas.clientWidth;
+      const height = parent?.clientHeight ?? canvas.clientHeight;
+      if (width < 2 || height < 2) return;
+
+      if (peaksRef.current.length < preset.barCount) {
+        peaksRef.current = new Float32Array(preset.barCount);
+      }
+
+      const live = getSpectrumFrame();
+      const currentStatus = statusRef.current;
+      let frame = live;
+
+      if (currentStatus === "playing") {
+        frozenRef.current = cloneFrame(live);
+        frame = live;
+      } else if (currentStatus === "paused" && frozenRef.current) {
+        frame = frozenRef.current;
+      } else if (currentStatus === "stopped") {
+        frozenRef.current = null;
+        frame = live;
+      }
+
+      drawVisualizer({
+        ctx,
+        width,
+        height,
+        preset,
+        frame,
+        accent: readAccent(),
+        peaks: peaksRef.current,
+      });
     };
 
-    const unsub = subscribeSpectrum(() => {
-      if (!raf) raf = requestAnimationFrame(tick);
-    });
-
+    const unsub = subscribeSpectrum(() => {});
     raf = requestAnimationFrame(tick);
 
     return () => {
@@ -121,14 +125,15 @@ export function PlayerVisualizer({
       unsub();
       ro.disconnect();
     };
-  }, [preset, reducedMotion, status]);
+  }, [preset, reducedMotion, enabled]);
 
-  if (preset.id === "off") return null;
+  if (!enabled) return null;
 
   return (
     <div
       className={cn("player-visualizer", className)}
       aria-hidden="true"
+      title="Soundbars"
     >
       <canvas ref={canvasRef} className="player-visualizer__canvas" />
     </div>

@@ -40,6 +40,28 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-08-v1-6-5",
+    version: "1.6.5",
+    title: "Atrium 1.6.5",
+    date: "2026-08-12",
+    summary:
+      "Soundbars sit between Repeat and volume — wider, toggleable, and they no longer shove the transport around.",
+    changes: [
+      {
+        kind: "improve",
+        text: "Tiny soundbars live in the open space between Repeat and volume, and can stretch across that gap",
+      },
+      {
+        kind: "fix",
+        text: "Prev / pause / next stay locked in place when you turn soundbars on or off",
+      },
+      {
+        kind: "add",
+        text: "Settings → Appearance: Show soundbars toggle (on by default) plus style picker",
+      },
+    ],
+  },
+  {
     id: "2026-08-v1-6-0",
     version: "1.6.0",
     title: "Atrium 1.6",
