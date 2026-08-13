@@ -40,6 +40,20 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-08-v1-6-6",
+    version: "1.6.6",
+    title: "Atrium 1.6.6",
+    date: "2026-08-13",
+    summary:
+      "Stubborn .m4a files import again — if tags fail to read, we still pull duration and add the track.",
+    changes: [
+      {
+        kind: "fix",
+        text: "Import no longer dies on some .m4a / AAC files (Live / odd MP4 layouts) — falls back when tags can’t be read",
+      },
+    ],
+  },
+  {
     id: "2026-08-v1-6-5",
     version: "1.6.5",
     title: "Atrium 1.6.5",

@@ -60,7 +60,9 @@ impl SymphoniaDecoder {
             .map(|c| c.count())
             .unwrap_or(2)
             .max(1);
-        let duration_ms = lofty_duration_ms(path);
+        let duration_ms = duration_ms_from_track(track)
+            .or_else(|| lofty_duration_ms(path))
+            .unwrap_or(0);
 
         let decoder = get_codecs()
             .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
@@ -234,7 +236,7 @@ fn resample_linear(input: &[f32], in_rate: u32, out_rate: u32) -> Vec<f32> {
     out
 }
 
-fn lofty_duration_ms(path: &Path) -> u64 {
+fn lofty_duration_ms(path: &Path) -> Option<u64> {
     use lofty::file::AudioFile;
     use lofty::probe::Probe;
 
@@ -243,7 +245,21 @@ fn lofty_duration_ms(path: &Path) -> u64 {
         .and_then(|probe| probe.read().ok())
         .map(|tagged| tagged.properties().duration().as_millis() as u64)
         .filter(|ms| *ms > 0)
-        .unwrap_or(0)
+}
+
+fn duration_ms_from_track(track: &symphonia::core::formats::Track) -> Option<u64> {
+    use symphonia::core::units::Timestamp;
+
+    let tb = track.time_base?;
+    let dur = track.duration?;
+    let ts = dur.timestamp_from(Timestamp::ZERO)?;
+    let time = tb.calc_time(ts)?;
+    let ms = time.as_millis();
+    if ms <= 0 {
+        None
+    } else {
+        Some(ms as u64)
+    }
 }
 
 #[cfg(test)]

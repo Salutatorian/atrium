@@ -8,10 +8,30 @@ use lofty::prelude::*;
 use lofty::probe::Probe;
 use lofty::tag::ItemKey;
 use std::fs;
+use std::fs::File;
 use std::path::Path;
 use std::time::SystemTime;
+use symphonia::core::formats::probe::Hint;
+use symphonia::core::formats::{FormatOptions, TrackType};
+use symphonia::core::io::MediaSourceStream;
+use symphonia::core::meta::MetadataOptions;
+use symphonia::core::units::Timestamp;
+use symphonia::default::get_probe;
 
 pub fn parse_audio_file(path: &Path) -> Result<ParsedTrack, AppError> {
+    match parse_with_lofty(path) {
+        Ok(parsed) => Ok(parsed),
+        Err(lofty_err) => match parse_with_symphonia(path) {
+            Ok(parsed) => Ok(parsed),
+            Err(sym_err) => Err(AppError::Message(format!(
+                "Failed to read {}: {lofty_err}; also {sym_err}",
+                path.display()
+            ))),
+        },
+    }
+}
+
+fn parse_with_lofty(path: &Path) -> Result<ParsedTrack, AppError> {
     let meta = fs::metadata(path)?;
     let size = meta.len();
     let mtime = system_time_to_unix(meta.modified().ok());
@@ -157,6 +177,104 @@ pub fn parse_audio_file(path: &Path) -> Result<ParsedTrack, AppError> {
     })
 }
 
+/// When Lofty's MP4 tag reader rejects a still-playable file (e.g. quirky M4A
+/// layouts that report "No moov atom"), fall back to Symphonia for basics.
+fn parse_with_symphonia(path: &Path) -> Result<ParsedTrack, AppError> {
+    let meta = fs::metadata(path)?;
+    let size = meta.len();
+    let mtime = system_time_to_unix(meta.modified().ok());
+    let ctime = meta.created().ok().and_then(system_time_to_unix_opt);
+
+    let file = File::open(path).map_err(|e| {
+        AppError::Message(format!("Unable to open {}: {e}", path.display()))
+    })?;
+    let mss = MediaSourceStream::new(Box::new(file), Default::default());
+    let mut hint = Hint::new();
+    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+        hint.with_extension(ext);
+    }
+
+    let format = get_probe()
+        .probe(
+            &hint,
+            mss,
+            FormatOptions::default(),
+            MetadataOptions::default(),
+        )
+        .map_err(|e| AppError::Message(format!("Unsupported or corrupt audio: {e}")))?;
+
+    let track = format
+        .default_track(TrackType::Audio)
+        .ok_or_else(|| AppError::Message("No audio track found in file".into()))?;
+
+    let codec_params = track
+        .codec_params
+        .as_ref()
+        .ok_or_else(|| AppError::Message("Missing codec parameters".into()))?;
+    let audio = codec_params
+        .audio()
+        .ok_or_else(|| AppError::Message("Track is not an audio stream".into()))?;
+
+    let sample_rate = audio.sample_rate.map(|v| v as i64);
+    let channels = audio
+        .channels
+        .as_ref()
+        .map(|c| c.count() as i64);
+    let bit_depth = audio.bits_per_sample.map(|v| v as i64);
+    let duration_ms = duration_ms_from_track(track);
+    let title = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_string());
+
+    Ok(ParsedTrack {
+        path: path.to_path_buf(),
+        size,
+        mtime,
+        ctime,
+        extension: normalize_extension(path),
+        title,
+        artist: None,
+        album_artist: None,
+        album: None,
+        genre: None,
+        year: None,
+        track_number: None,
+        track_total: None,
+        disc_number: None,
+        disc_total: None,
+        composer: None,
+        comment: None,
+        duration_ms,
+        bitrate: None,
+        sample_rate,
+        bit_depth,
+        channels,
+        codec: Some(format!("{:?}", audio.codec)),
+        container: Some(normalize_extension(path)),
+        has_lyrics: false,
+        replaygain_track_gain: None,
+        replaygain_album_gain: None,
+        replaygain_track_peak: None,
+        replaygain_album_peak: None,
+        artwork_bytes: None,
+        artwork_mime: None,
+    })
+}
+
+fn duration_ms_from_track(track: &symphonia::core::formats::Track) -> Option<i64> {
+    let tb = track.time_base?;
+    let dur = track.duration?;
+    let ts = dur.timestamp_from(Timestamp::ZERO)?;
+    let time = tb.calc_time(ts)?;
+    let ms = time.as_millis();
+    if ms <= 0 {
+        None
+    } else {
+        Some(ms as i64)
+    }
+}
+
 pub fn write_basic_tags(
     path: &Path,
     title: Option<&str>,
@@ -226,4 +344,27 @@ fn system_time_to_unix_opt(time: SystemTime) -> Option<i64> {
     time.duration_since(SystemTime::UNIX_EPOCH)
         .ok()
         .map(|d| d.as_secs() as i64)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn parse_fake_plastic_live_m4a_if_present() {
+        let path =
+            Path::new(r"C:\Users\JW\Downloads\frank unrelease\Fake Plastic Trees (Live).m4a");
+        if !path.is_file() {
+            return;
+        }
+        let parsed = parse_audio_file(path).expect("playable m4a should import");
+        assert_eq!(
+            parsed.title.as_deref(),
+            Some("Fake Plastic Trees (Live)")
+        );
+        assert!(parsed.duration_ms.unwrap_or(0) > 60_000);
+        assert_eq!(parsed.sample_rate, Some(44_100));
+        assert_eq!(parsed.channels, Some(2));
+    }
 }
