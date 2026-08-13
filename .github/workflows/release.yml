@@ -81,34 +81,3 @@ jobs:
           args: ${{ matrix.args }}
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
-
-  # Rewrite notes after all builds finish so the table stays on top of the release page.
-  finalize-release-notes:
-    needs: publish-tauri
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clarify release notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ github.ref_name }}"
-          if [[ "${{ github.ref }}" != refs/tags/* ]]; then
-            TAG=$(gh release list --repo "${{ github.repository }}" --limit 5 --json tagName,isLatest --jq '.[] | select(.isLatest==true) | .tagName' | head -n1)
-          fi
-          BODY=$(cat <<'EOF'
-## Download (pick one)
-
-| Your computer | File to download |
-| --- | --- |
-| **Windows** | `Atrium_*_x64-setup.exe` |
-| **Mac with Apple chip** (M1 / M2 / M3 / M4) | `Atrium_*_aarch64.dmg` |
-| **Mac with Intel chip** | `Atrium_*_x64.dmg` |
-| **Linux** | `Atrium_*_amd64.AppImage` |
-
-macOS tip: first open may need right-click → **Open**.
-Windows tip: SmartScreen may warn until code signing is added.
-
-Ignore `.sig`, `.app.tar.gz`, and `latest.json` — those are only for in-app updates.
-EOF
-)
-          gh release edit "$TAG" --repo "${{ github.repository }}" --notes "$BODY"
