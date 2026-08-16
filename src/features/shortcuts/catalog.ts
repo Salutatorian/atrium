@@ -87,9 +87,15 @@ export function getShortcutCatalog(): ShortcutGroup[] {
         },
         {
           id: "escape",
-          action: "Close drawer / now playing / exit mini or immersive",
+          action: "Close drawer / now playing / exit mini or visualizer",
           chords: [{ code: "Escape", key: "Escape" }],
           labels: [["Esc"]],
+        },
+        {
+          id: "visualizer-fullscreen",
+          action: "Toggle OS fullscreen in Visualizer Mode",
+          chords: [{ code: "F11", key: "F11" }],
+          labels: [["F11"]],
         },
       ],
     },

@@ -6,7 +6,10 @@ export type VisualizerShape =
   | "segments"
   | "solid"
   | "wave"
-  | "mirror";
+  | "mirror"
+  | "radial"
+  | "ring"
+  | "scope";
 
 export type VisualizerColorMode =
   | "accent"
@@ -40,7 +43,10 @@ export type VisualizerStyleId =
   | "pulse-bars"
   | "mono-leds"
   | "fire-bars"
-  | "ice-bars";
+  | "ice-bars"
+  | "radial-spectrum"
+  | "frequency-ring"
+  | "oscilloscope";
 
 export type VisualizerPreset = {
   id: VisualizerStyleId;
@@ -246,6 +252,36 @@ export const VISUALIZER_PRESETS: VisualizerPreset[] = [
     peaks: false,
     barCount: 36,
     beatPunch: 1.1,
+  },
+  {
+    id: "radial-spectrum",
+    name: "Radial spectrum",
+    description: "Bars radiate from the center",
+    shape: "radial",
+    colorMode: "rainbow",
+    peaks: false,
+    barCount: 64,
+    beatPunch: 1.2,
+  },
+  {
+    id: "frequency-ring",
+    name: "Frequency ring",
+    description: "Circular equalizer around a pulse",
+    shape: "ring",
+    colorMode: "accent",
+    peaks: false,
+    barCount: 72,
+    beatPunch: 1.15,
+  },
+  {
+    id: "oscilloscope",
+    name: "Oscilloscope",
+    description: "Classic glowing waveform",
+    shape: "scope",
+    colorMode: "cyan",
+    peaks: false,
+    barCount: 96,
+    beatPunch: 1.05,
   },
 ];
 

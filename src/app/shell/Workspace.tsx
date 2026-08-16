@@ -5,7 +5,6 @@ import { StatsView } from "../../features/listening/StatsView";
 import { PlaylistsPage } from "../../features/playlists/PlaylistsPage";
 import { SearchView } from "../../features/search/SearchView";
 import { SettingsView } from "../../features/settings/SettingsView";
-import { NowPlayingOverlay } from "../../features/player/NowPlayingOverlay";
 import { useShellStore } from "../../stores/shell-store";
 
 export function Workspace() {
@@ -22,7 +21,6 @@ export function Workspace() {
         {activeNav === "search" ? <SearchView /> : null}
         {activeNav === "settings" ? <SettingsView /> : null}
       </div>
-      <NowPlayingOverlay />
     </main>
   );
 }

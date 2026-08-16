@@ -69,24 +69,51 @@ export type DrawContext = {
   frame: SpectrumFrame;
   accent: string;
   peaks: Float32Array;
+  /** Opaque backdrop for full-window stage; player preview stays transparent. */
+  fillBackground?: boolean;
 };
+
+function canvasScale(width: number, height: number): number {
+  return Math.max(1, Math.min(width, height) / 360);
+}
 
 export function drawVisualizer(args: DrawContext): void {
   const { ctx, width, height, preset, frame, accent, peaks } = args;
-  ctx.clearRect(0, 0, width, height);
+  if (args.fillBackground) {
+    ctx.fillStyle = "#05070a";
+    ctx.fillRect(0, 0, width, height);
+  } else {
+    ctx.clearRect(0, 0, width, height);
+  }
   if (preset.id === "off" || preset.barCount <= 0 || width < 8 || height < 8) {
     return;
   }
 
   const levels = sampleBands(frame, preset.barCount, preset.beatPunch);
+  const scale = canvasScale(width, height);
 
   if (preset.shape === "wave") {
-    drawWave({ ctx, width, height, preset, levels, accent, frame });
+    drawWave({ ctx, width, height, preset, levels, accent, frame, scale });
     return;
   }
 
   if (preset.shape === "mirror") {
     drawMirror({ ctx, width, height, preset, levels, accent, peaks });
+    return;
+  }
+
+  if (preset.shape === "radial") {
+    drawRadial({ ctx, width, height, preset, levels, accent, frame, scale });
+    return;
+  }
+
+  if (preset.shape === "ring") {
+    drawRing({ ctx, width, height, preset, levels, accent, frame, scale });
+    return;
+  }
+
+  if (preset.shape === "scope") {
+    drawScope({ ctx, width, height, preset, levels, accent, frame, scale });
     return;
   }
 
@@ -267,8 +294,9 @@ function drawWave(args: {
   levels: number[];
   accent: string;
   frame: SpectrumFrame;
+  scale: number;
 }): void {
-  const { ctx, width, height, preset, levels, accent, frame } = args;
+  const { ctx, width, height, preset, levels, accent, frame, scale } = args;
   const mid = height * 0.55;
   const amp = height * 0.38 * (0.55 + frame.energy * 0.45 + frame.beat * 0.35);
   const layers = 5;
@@ -295,9 +323,122 @@ function drawWave(args: {
       accent,
     );
     ctx.globalAlpha = 0.35 + (1 - layer / layers) * 0.45;
-    ctx.lineWidth = 1.4;
+    ctx.lineWidth = 1.4 * scale;
     ctx.stroke();
   }
+  ctx.globalAlpha = 1;
+}
+
+function drawRadial(args: {
+  ctx: CanvasRenderingContext2D;
+  width: number;
+  height: number;
+  preset: VisualizerPreset;
+  levels: number[];
+  accent: string;
+  frame: SpectrumFrame;
+  scale: number;
+}): void {
+  const { ctx, width, height, preset, levels, accent, frame, scale } = args;
+  const cx = width / 2;
+  const cy = height / 2;
+  const maxR = Math.min(width, height) * (0.42 + frame.energy * 0.08);
+  const inner = maxR * 0.14;
+  const n = levels.length;
+  const barW = Math.max(1.5 * scale, ((Math.PI * 2 * maxR) / n) * 0.52);
+
+  for (let i = 0; i < n; i++) {
+    const level = levels[i] ?? 0;
+    const t = n <= 1 ? 0 : i / n;
+    const angle = t * Math.PI * 2 - Math.PI / 2;
+    const len = inner + level * (maxR - inner);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.fillStyle = columnColor(preset.colorMode, t, level, accent);
+    ctx.globalAlpha = 0.55 + level * 0.45;
+    roundRect(ctx, inner, -barW / 2, Math.max(1, len - inner), barW, Math.min(3, barW / 2));
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, inner * (0.7 + frame.beat * 0.45), 0, Math.PI * 2);
+  ctx.fillStyle = columnColor(preset.colorMode, 0.5, 1, accent);
+  ctx.globalAlpha = 0.35 + frame.beat * 0.4;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawRing(args: {
+  ctx: CanvasRenderingContext2D;
+  width: number;
+  height: number;
+  preset: VisualizerPreset;
+  levels: number[];
+  accent: string;
+  frame: SpectrumFrame;
+  scale: number;
+}): void {
+  const { ctx, width, height, preset, levels, accent, frame, scale } = args;
+  const cx = width / 2;
+  const cy = height / 2;
+  const radius = Math.min(width, height) * (0.28 + frame.bass * 0.04);
+  const n = levels.length;
+  ctx.save();
+  ctx.translate(cx, cy);
+  for (let i = 0; i < n; i++) {
+    const level = levels[i] ?? 0;
+    const t = n <= 1 ? 0 : i / n;
+    const angle = t * Math.PI * 2 - Math.PI / 2;
+    const outer = radius + level * Math.min(width, height) * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+    ctx.strokeStyle = columnColor(preset.colorMode, t, level, accent);
+    ctx.globalAlpha = 0.45 + level * 0.55;
+    ctx.lineWidth = Math.max(1.5, scale * 2.2);
+    ctx.lineCap = "round";
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(0, 0, radius * (0.92 + frame.beat * 0.08), 0, Math.PI * 2);
+  ctx.strokeStyle = columnColor(preset.colorMode, 0.2, 0.6, accent);
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = scale;
+  ctx.stroke();
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function drawScope(args: {
+  ctx: CanvasRenderingContext2D;
+  width: number;
+  height: number;
+  preset: VisualizerPreset;
+  levels: number[];
+  accent: string;
+  frame: SpectrumFrame;
+  scale: number;
+}): void {
+  const { ctx, width, height, preset, levels, accent, frame, scale } = args;
+  const mid = height / 2;
+  const amp = height * (0.32 + frame.energy * 0.12);
+  ctx.beginPath();
+  for (let i = 0; i < levels.length; i++) {
+    const t = i / Math.max(1, levels.length - 1);
+    const x = t * width;
+    const y = mid - ((levels[i] ?? 0) * 2 - 1) * amp * 0.55;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = columnColor(preset.colorMode, 0.4, 0.8, accent);
+  ctx.globalAlpha = 0.25;
+  ctx.lineWidth = 6 * scale;
+  ctx.stroke();
+  ctx.strokeStyle = columnColor(preset.colorMode, 0.35, 1, accent);
+  ctx.globalAlpha = 0.95;
+  ctx.lineWidth = 1.6 * scale;
+  ctx.stroke();
   ctx.globalAlpha = 1;
 }
 

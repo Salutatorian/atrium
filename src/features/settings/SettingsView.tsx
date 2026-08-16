@@ -16,6 +16,7 @@ import {
   DEFAULT_UI_FONT_ID,
 } from "../themes/font-catalog";
 import { VISUALIZER_PRESETS } from "../visualizer/catalog";
+import { STAGE_SCENES } from "../visualizer/stage-catalog";
 import {
   bandsMatchPreset,
   EQ_FREQUENCY_LABELS,
@@ -538,10 +539,87 @@ function AppearanceSettings({
         </select>
       </label>
       <p className="settings-note">
-        Tiny beat-reactive bars sit between Repeat and volume. On by default —
-        turn off above, or pick another of the{" "}
-        {VISUALIZER_PRESETS.length - 1} styles.
+        Tiny beat-reactive bars in the player only. Click them to open a
+        separate full-window Visualizer Mode — not a blown-up soundbar.
       </p>
+      <label className="settings-field">
+        <span>Visualizer scene</span>
+        <select
+          value={settings.appearance.visualizerScene}
+          onChange={(event) => {
+            void patchAppearance({
+              visualizerScene: event.target
+                .value as AppSettings["appearance"]["visualizerScene"],
+            });
+          }}
+        >
+          {STAGE_SCENES.map((scene) => (
+            <option key={scene.id} value={scene.id}>
+              {scene.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="settings-note">
+        {STAGE_SCENES.find((s) => s.id === settings.appearance.visualizerScene)
+          ?.description ?? ""}
+      </p>
+      <label className="settings-field">
+        <span>Track overlay</span>
+        <select
+          value={settings.appearance.visualizerOverlay}
+          onChange={(event) => {
+            void patchAppearance({
+              visualizerOverlay: event.target
+                .value as AppSettings["appearance"]["visualizerOverlay"],
+            });
+          }}
+        >
+          <option value="track-change">On track change</option>
+          <option value="always">Always</option>
+          <option value="never">Never</option>
+        </select>
+      </label>
+      <label className="settings-field settings-field--checkbox">
+        <span>Auto-hide controls in Visualizer Mode</span>
+        <input
+          type="checkbox"
+          checked={settings.appearance.visualizerAutoHide}
+          onChange={(event) => {
+            void patchAppearance({ visualizerAutoHide: event.target.checked });
+          }}
+        />
+      </label>
+      <label className="settings-field settings-field--checkbox">
+        <span>Hide cursor when controls fade</span>
+        <input
+          type="checkbox"
+          checked={settings.appearance.visualizerHideCursor}
+          onChange={(event) => {
+            void patchAppearance({ visualizerHideCursor: event.target.checked });
+          }}
+        />
+      </label>
+      <label className="settings-field settings-field--checkbox">
+        <span>Visualizer vignette</span>
+        <input
+          type="checkbox"
+          checked={settings.appearance.visualizerVignette}
+          onChange={(event) => {
+            void patchAppearance({ visualizerVignette: event.target.checked });
+          }}
+        />
+      </label>
+      <label className="settings-field settings-field--checkbox">
+        <span>Visualizer grain</span>
+        <input
+          type="checkbox"
+          checked={settings.appearance.visualizerGrain}
+          onChange={(event) => {
+            void patchAppearance({ visualizerGrain: event.target.checked });
+          }}
+        />
+      </label>
       <label className="settings-field">
         <span>Window mode</span>
         <select
@@ -554,7 +632,7 @@ function AppearanceSettings({
           }}
         >
           <option value="normal">Normal</option>
-          <option value="immersive">Immersive</option>
+          <option value="visualizer">Visualizer</option>
           <option value="mini">Mini player</option>
         </select>
       </label>

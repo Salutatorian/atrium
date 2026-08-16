@@ -40,6 +40,24 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-08-v1-7-0",
+    version: "1.7.0",
+    title: "Atrium 1.7",
+    date: "2026-08-16",
+    summary:
+      "Visualizer Mode — click the mini soundbars and the music fills the window.",
+    changes: [
+      {
+        kind: "add",
+        text: "Visualizer Mode is its own full-window scene (clouds, tunnels, plasma) — not a giant soundbar",
+      },
+      {
+        kind: "improve",
+        text: "The player dock turns translucent so the visualization keeps running behind it",
+      },
+    ],
+  },
+  {
     id: "2026-08-v1-6-6",
     version: "1.6.6",
     title: "Atrium 1.6.6",

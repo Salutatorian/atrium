@@ -63,6 +63,8 @@ jobs:
           tagName: v__VERSION__
           releaseName: Atrium v__VERSION__
           releaseBody: |
+            Click the mini soundbars to open Visualizer Mode — full-window scenes like Ambience, Tunnel, and Plasma. Esc exits. F11 is real fullscreen.
+
             ## Download (pick one)
 
             | Your computer | File to download |

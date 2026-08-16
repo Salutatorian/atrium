@@ -50,7 +50,10 @@ export const appSettingsSchema = z.object({
     followSystemTheme: z.boolean(),
     density: z.enum(["compact", "comfortable", "spacious"]),
     playerBarStyle: z.enum(["floating-pill", "full-width"]),
-    shellMode: z.enum(["normal", "immersive", "mini"]),
+    shellMode: z.preprocess(
+      (value) => (value === "immersive" ? "visualizer" : value),
+      z.enum(["normal", "visualizer", "mini"]),
+    ),
     sidebarExpanded: z.boolean(),
     inspectorOpen: z.boolean(),
     inspectorWidth: z.number().int().min(240).max(720),
@@ -81,10 +84,35 @@ export const appSettingsSchema = z.object({
         "mono-leds",
         "fire-bars",
         "ice-bars",
+        "radial-spectrum",
+        "frequency-ring",
+        "oscilloscope",
       ])
       .default("classic-blocks"),
     /** Tiny soundbars between repeat and volume. Default on. */
     visualizerEnabled: z.boolean().default(true),
+    /** Full-window Visualizer Mode scene (not the player soundbars). */
+    visualizerScene: z
+      .enum([
+        "ambience",
+        "tunnel",
+        "plasma",
+        "starfield",
+        "particles",
+        "vortex",
+        "ribbons",
+      ])
+      .default("ambience"),
+    /** Track metadata over the full-window visualizer. */
+    visualizerOverlay: z
+      .enum(["always", "track-change", "never"])
+      .default("track-change"),
+    /** Fade player chrome after idle in Visualizer Mode. */
+    visualizerAutoHide: z.boolean().default(true),
+    /** Hide the cursor with idle chrome. */
+    visualizerHideCursor: z.boolean().default(true),
+    visualizerVignette: z.boolean().default(true),
+    visualizerGrain: z.boolean().default(false),
   }),
   lyrics: z.object({
     preferSynchronized: z.boolean(),
@@ -152,6 +180,12 @@ export const defaultSettings: AppSettings = {
     headingFontId: "fraunces",
     visualizerStyle: "classic-blocks",
     visualizerEnabled: true,
+    visualizerScene: "ambience",
+    visualizerOverlay: "track-change",
+    visualizerAutoHide: true,
+    visualizerHideCursor: true,
+    visualizerVignette: true,
+    visualizerGrain: false,
   },
   lyrics: {
     preferSynchronized: true,

@@ -52,8 +52,25 @@ describe("settings schema", () => {
         playerBarStyle: "full-width",
       },
     });
-    expect(settings.appearance.shellMode).toBe("immersive");
+    expect(settings.appearance.shellMode).toBe("visualizer");
     expect(settings.appearance.playerBarStyle).toBe("full-width");
+  });
+
+  it("fills visualizer mode defaults", () => {
+    const appearance = {
+      ...defaultSettings.appearance,
+    } as Record<string, unknown>;
+    delete appearance.visualizerOverlay;
+    delete appearance.visualizerAutoHide;
+    const settings = validateSettings({
+      ...defaultSettings,
+      appearance,
+    });
+    expect(settings.appearance.visualizerOverlay).toBe("track-change");
+    expect(settings.appearance.visualizerAutoHide).toBe(true);
+    expect(settings.appearance.visualizerHideCursor).toBe(true);
+    expect(settings.appearance.visualizerVignette).toBe(true);
+    expect(settings.appearance.visualizerGrain).toBe(false);
   });
 
   it("rejects invalid shell mode", () => {
@@ -90,10 +107,11 @@ describe("settings schema", () => {
   });
 
   it("fills default eq bands when missing", () => {
-    const { eqBands: _omit, ...playbackRest } = defaultSettings.playback;
+    const playback = { ...defaultSettings.playback } as Record<string, unknown>;
+    delete playback.eqBands;
     const settings = validateSettings({
       ...defaultSettings,
-      playback: playbackRest,
+      playback,
     });
     expect(settings.playback.eqBands).toEqual([
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

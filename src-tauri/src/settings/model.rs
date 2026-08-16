@@ -119,6 +119,18 @@ pub struct AppearanceSettings {
     pub visualizer_style: String,
     #[serde(default = "default_visualizer_enabled")]
     pub visualizer_enabled: bool,
+    #[serde(default = "default_visualizer_scene")]
+    pub visualizer_scene: String,
+    #[serde(default = "default_visualizer_overlay")]
+    pub visualizer_overlay: String,
+    #[serde(default = "default_visualizer_auto_hide")]
+    pub visualizer_auto_hide: bool,
+    #[serde(default = "default_visualizer_hide_cursor")]
+    pub visualizer_hide_cursor: bool,
+    #[serde(default = "default_visualizer_vignette")]
+    pub visualizer_vignette: bool,
+    #[serde(default)]
+    pub visualizer_grain: bool,
 }
 
 fn default_shell_mode() -> String {
@@ -138,6 +150,26 @@ fn default_visualizer_style() -> String {
 }
 
 fn default_visualizer_enabled() -> bool {
+    true
+}
+
+fn default_visualizer_scene() -> String {
+    "ambience".into()
+}
+
+fn default_visualizer_overlay() -> String {
+    "track-change".into()
+}
+
+fn default_visualizer_auto_hide() -> bool {
+    true
+}
+
+fn default_visualizer_hide_cursor() -> bool {
+    true
+}
+
+fn default_visualizer_vignette() -> bool {
     true
 }
 
@@ -211,6 +243,12 @@ impl Default for AppSettings {
                 heading_font_id: "fraunces".into(),
                 visualizer_style: "classic-blocks".into(),
                 visualizer_enabled: true,
+                visualizer_scene: "ambience".into(),
+                visualizer_overlay: "track-change".into(),
+                visualizer_auto_hide: true,
+                visualizer_hide_cursor: true,
+                visualizer_vignette: true,
+                visualizer_grain: false,
             },
             lyrics: LyricsSettings {
                 prefer_synchronized: true,
@@ -303,9 +341,9 @@ impl AppSettings {
             ));
         }
         let shell = self.appearance.shell_mode.as_str();
-        if !matches!(shell, "normal" | "immersive" | "mini") {
+        if !matches!(shell, "normal" | "visualizer" | "mini" | "immersive") {
             return Err(AppError::Message(
-                "appearance.shellMode must be normal, immersive, or mini".into(),
+                "appearance.shellMode must be normal, visualizer, or mini".into(),
             ));
         }
         let motion = self.appearance.reduced_motion.as_str();
@@ -336,9 +374,27 @@ impl AppSettings {
                 | "mono-leds"
                 | "fire-bars"
                 | "ice-bars"
+                | "radial-spectrum"
+                | "frequency-ring"
+                | "oscilloscope"
         ) {
             return Err(AppError::Message(
                 "appearance.visualizerStyle is not a known soundbar style".into(),
+            ));
+        }
+        let overlay = self.appearance.visualizer_overlay.as_str();
+        if !matches!(overlay, "always" | "track-change" | "never") {
+            return Err(AppError::Message(
+                "appearance.visualizerOverlay must be always, track-change, or never".into(),
+            ));
+        }
+        let scene = self.appearance.visualizer_scene.as_str();
+        if !matches!(
+            scene,
+            "ambience" | "tunnel" | "plasma" | "starfield" | "particles" | "vortex" | "ribbons"
+        ) {
+            return Err(AppError::Message(
+                "appearance.visualizerScene is not a known visualizer scene".into(),
             ));
         }
         Ok(())

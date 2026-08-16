@@ -25,6 +25,8 @@ export function Inspector() {
     if (!open) return;
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
         setOpen(false);
       }
     }

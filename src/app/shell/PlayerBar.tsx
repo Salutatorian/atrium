@@ -20,6 +20,9 @@ import { useShellStore } from "../../stores/shell-store";
 import { useSettingsStore } from "../../stores/settings-store";
 import { cn } from "../../utils/cn";
 import { PlayerVisualizer } from "../../features/visualizer/PlayerVisualizer";
+import { isVisualizerShell } from "../../features/shell/mode";
+import { setOsFullscreen } from "../../features/shell/window-fullscreen";
+import { DEFAULT_VISUALIZER_STYLE } from "../../features/visualizer/catalog";
 
 type PlayerBarProps = {
   reducedMotion: boolean;
@@ -63,6 +66,11 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
+  const visualizer = isVisualizerShell(shellMode);
+  const visualizerStyle = useSettingsStore(
+    (s) => s.settings.appearance.visualizerStyle,
+  );
+
   const playing = status === "playing";
   const hasTrack = Boolean(current);
   const canFavorite = Boolean(current && current.trackId > 0);
@@ -94,7 +102,11 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
       }
     }
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setMoreOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setMoreOpen(false);
+      }
     }
     window.addEventListener("pointerdown", onPointer);
     window.addEventListener("keydown", onKey);
@@ -110,7 +122,7 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
         "player-bar",
         `player-bar--${style}`,
         shellMode === "mini" && "player-bar--mini",
-        shellMode === "immersive" && "player-bar--immersive",
+        visualizer && "player-bar--visualizer",
         !reducedMotion && "player-bar--alive",
       )}
       role="region"
@@ -256,7 +268,34 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
           </Tooltip>
           </div>
           <div className="player-bar__viz-slot">
-            <PlayerVisualizer reducedMotion={reducedMotion} />
+            <Tooltip
+              label={visualizer ? "Exit visualizer" : "Open visualizer"}
+              side="top"
+            >
+              <button
+                type="button"
+                className="player-bar__viz-toggle"
+                aria-label={visualizer ? "Exit visualizer" : "Open visualizer"}
+                aria-pressed={visualizer}
+                onClick={() => {
+                  if (visualizer) {
+                    void setOsFullscreen(false);
+                    void patchAppearance({ shellMode: "normal" });
+                    return;
+                  }
+                  void patchAppearance({
+                    shellMode: "visualizer",
+                    visualizerEnabled: true,
+                    visualizerStyle:
+                      visualizerStyle === "off"
+                        ? DEFAULT_VISUALIZER_STYLE
+                        : visualizerStyle,
+                  });
+                }}
+              >
+                <PlayerVisualizer reducedMotion={reducedMotion} />
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -355,16 +394,23 @@ export function PlayerBar({ reducedMotion }: PlayerBarProps) {
                 type="button"
                 role="menuitem"
                 onClick={() => {
-                  void patchAppearance({
-                    shellMode:
-                      shellMode === "immersive" ? "normal" : "immersive",
-                  });
+                  if (visualizer) {
+                    void setOsFullscreen(false);
+                    void patchAppearance({ shellMode: "normal" });
+                  } else {
+                    void patchAppearance({
+                      shellMode: "visualizer",
+                      visualizerEnabled: true,
+                      visualizerStyle:
+                        visualizerStyle === "off"
+                          ? DEFAULT_VISUALIZER_STYLE
+                          : visualizerStyle,
+                    });
+                  }
                   setMoreOpen(false);
                 }}
               >
-                {shellMode === "immersive"
-                  ? "Exit immersive"
-                  : "Immersive mode"}
+                {visualizer ? "Exit visualizer" : "Visualizer mode"}
               </button>
               <button
                 type="button"
