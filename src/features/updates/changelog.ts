@@ -40,6 +40,24 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-08-v1-7-1",
+    version: "1.7.1",
+    title: "Atrium 1.7.1",
+    date: "2026-08-28",
+    summary:
+      "Atrium remembers the last song and where it stopped — even after a force-close.",
+    changes: [
+      {
+        kind: "add",
+        text: "Reopens paused on the last track and position after quit or force-close",
+      },
+      {
+        kind: "improve",
+        text: "Skips restore when the file or folder is gone, and keeps the rest of the queue",
+      },
+    ],
+  },
+  {
     id: "2026-08-v1-7-0",
     version: "1.7.0",
     title: "Atrium 1.7",

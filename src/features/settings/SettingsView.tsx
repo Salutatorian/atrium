@@ -122,6 +122,21 @@ function GeneralSettings() {
         and light enough for older machines.
       </p>
       <label className="settings-field settings-field--checkbox">
+        <span>Remember last song and position</span>
+        <input
+          type="checkbox"
+          checked={settings.general.restoreQueue}
+          onChange={(event) => {
+            void patchGeneral({ restoreQueue: event.target.checked });
+          }}
+        />
+      </label>
+      <p className="settings-note">
+        After quit or force-close, the next launch opens the same queue paused
+        where you left off. Missing files — or a folder that is gone — are
+        skipped.
+      </p>
+      <label className="settings-field settings-field--checkbox">
         <span>Close to system tray</span>
         <input
           type="checkbox"

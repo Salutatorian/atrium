@@ -45,7 +45,12 @@ pub fn run() {
             let db = database::open_database(&db_path)?;
             let app_settings = settings::load_or_default(&data_dir)?;
             let initial_volume = app_settings.playback.default_volume as f32;
-            let player = PlayerEngine::start(app.handle().clone(), initial_volume)?;
+            let player = PlayerEngine::start(
+                app.handle().clone(),
+                initial_volume,
+                data_dir.clone(),
+                app_settings.general.restore_queue,
+            )?;
             player.apply_playback_settings(&app_settings.playback);
 
             // Keep login item in sync with saved preference (all desktop OS).

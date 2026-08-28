@@ -25,6 +25,7 @@ pub struct GeneralSettings {
     #[serde(default)]
     pub launch_at_login: bool,
     pub restore_last_page: bool,
+    #[serde(default = "default_true")]
     pub restore_queue: bool,
     pub language: String,
     pub check_for_updates: bool,

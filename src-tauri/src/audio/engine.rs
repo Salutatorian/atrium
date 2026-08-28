@@ -1,6 +1,7 @@
 use crate::audio::decoder::{convert_audio, SymphoniaDecoder};
 use crate::audio::output::{OutputDevice, SharedBuffer};
 use crate::audio::queue::PlayQueue;
+use crate::audio::session::{self, PlaybackSession};
 use crate::audio::types::{
     PlayerSnapshot, PlayerStatus, PositionEvent, QueueTrack, RepeatMode, TrackChangedEvent,
 };
@@ -11,7 +12,7 @@ use crate::events::{
 use crate::settings::PlaybackSettings;
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use parking_lot::Mutex;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -61,12 +62,18 @@ pub struct PlayerEngine {
 }
 
 impl PlayerEngine {
-    pub fn start(app: AppHandle, initial_volume: f32) -> Result<Self, AppError> {
+    pub fn start(
+        app: AppHandle,
+        initial_volume: f32,
+        data_dir: PathBuf,
+        restore_queue: bool,
+    ) -> Result<Self, AppError> {
         let (tx, rx) = unbounded();
         let buffer = SharedBuffer::new();
-        buffer
-            .volume
-            .store(f32::to_bits(initial_volume.clamp(0.0, 1.0)), Ordering::Relaxed);
+        buffer.volume.store(
+            f32::to_bits(initial_volume.clamp(0.0, 1.0)),
+            Ordering::Relaxed,
+        );
         let state = Arc::new(SharedPlayerState {
             status: Mutex::new(PlayerStatus::Stopped),
             current: Mutex::new(None),
@@ -79,14 +86,29 @@ impl PlayerEngine {
             crossfade_ms: AtomicU64::new(0),
         });
 
+        let restore = if restore_queue {
+            session::load_sanitized(&data_dir)
+        } else {
+            None
+        };
+        if let Some(ref session) = restore {
+            apply_session_to_shared_state(&state, session);
+        }
+
         let worker_state = Arc::clone(&state);
         let worker_buffer = Arc::clone(&buffer);
         thread::Builder::new()
             .name("atrium-audio".into())
             .spawn(move || {
-                if let Err(err) =
-                    run_player_worker(app, worker_state, worker_buffer, rx, initial_volume)
-                {
+                if let Err(err) = run_player_worker(
+                    app,
+                    worker_state,
+                    worker_buffer,
+                    rx,
+                    initial_volume,
+                    data_dir,
+                    restore,
+                ) {
                     eprintln!("Audio worker stopped: {err}");
                 }
             })
@@ -128,12 +150,9 @@ impl PlayerEngine {
             ];
         }
         let sr = self.buffer.sample_rate.load(Ordering::Relaxed) as f32;
-        self.buffer.dsp.set_eq_bands(
-            settings.eq_enabled,
-            &gains,
-            settings.eq_q as f32,
-            sr,
-        );
+        self.buffer
+            .dsp
+            .set_eq_bands(settings.eq_enabled, &gains, settings.eq_q as f32, sr);
         let mode = match settings.replay_gain_mode.as_str() {
             "track" => 1,
             "album" => 2,
@@ -252,16 +271,25 @@ impl PlayerEngine {
     }
 }
 
+impl Drop for PlayerEngine {
+    fn drop(&mut self) {
+        let _ = self.commands.send(PlayerCommand::Shutdown);
+    }
+}
+
 fn run_player_worker(
     app: AppHandle,
     state: Arc<SharedPlayerState>,
     buffer: Arc<SharedBuffer>,
     rx: Receiver<PlayerCommand>,
     initial_volume: f32,
+    data_dir: PathBuf,
+    restore: Option<PlaybackSession>,
 ) -> Result<(), AppError> {
-    buffer
-        .volume
-        .store(f32::to_bits(initial_volume.clamp(0.0, 1.0)), Ordering::Relaxed);
+    buffer.volume.store(
+        f32::to_bits(initial_volume.clamp(0.0, 1.0)),
+        Ordering::Relaxed,
+    );
 
     let output = match OutputDevice::start(Arc::clone(&buffer)) {
         Ok(output) => Some(output),
@@ -281,11 +309,31 @@ fn run_player_worker(
     let mut decode_origin_ms = 0u64;
     let mut decoded_frames: u64 = 0;
     let source_rate = Arc::new(AtomicU64::new(out_rate as u64));
+    let mut persist = SessionPersist::new(data_dir);
+
+    if let Some(session) = restore {
+        playing = load_current(
+            &app,
+            &state,
+            &buffer,
+            &mut decoder,
+            &mut decode_origin_ms,
+            &mut decoded_frames,
+            &source_rate,
+            true,
+            false,
+            session.position_ms,
+        )?;
+        persist.save(&state, true);
+    }
 
     loop {
         while let Ok(cmd) = rx.try_recv() {
             match cmd {
-                PlayerCommand::Shutdown => return Ok(()),
+                PlayerCommand::Shutdown => {
+                    persist.save(&state, true);
+                    return Ok(());
+                }
                 PlayerCommand::ReplaceQueue {
                     tracks,
                     start_index,
@@ -306,23 +354,29 @@ fn run_player_worker(
                             &mut decoded_frames,
                             &source_rate,
                             true,
+                            true,
+                            0,
                         )?;
                     } else {
                         playing = false;
                         *state.status.lock() = PlayerStatus::Stopped;
                     }
+                    persist.save(&state, true);
                 }
                 PlayerCommand::AddEnd(tracks) => {
                     state.queue.lock().add_end(tracks);
                     emit_queue_changed(&app, &state);
+                    persist.save(&state, true);
                 }
                 PlayerCommand::AddNext(tracks) => {
                     state.queue.lock().add_next(tracks);
                     emit_queue_changed(&app, &state);
+                    persist.save(&state, true);
                 }
                 PlayerCommand::Remove(index) => {
                     state.queue.lock().remove(index);
                     emit_queue_changed(&app, &state);
+                    persist.save(&state, true);
                 }
                 PlayerCommand::Clear => {
                     state.queue.lock().clear();
@@ -335,9 +389,11 @@ fn run_player_worker(
                     state.duration_ms.store(0, Ordering::Relaxed);
                     emit_queue_changed(&app, &state);
                     emit_track_changed(&app, &state);
+                    persist.save(&state, true);
                 }
                 PlayerCommand::Play => {
                     if decoder.is_none() {
+                        let resume = state.position_ms.load(Ordering::Relaxed);
                         playing = load_current(
                             &app,
                             &state,
@@ -347,18 +403,22 @@ fn run_player_worker(
                             &mut decoded_frames,
                             &source_rate,
                             true,
+                            true,
+                            resume,
                         )?;
                     } else {
                         buffer.paused.store(false, Ordering::Relaxed);
                         playing = true;
                         *state.status.lock() = PlayerStatus::Playing;
                     }
+                    persist.save(&state, true);
                 }
                 PlayerCommand::Pause => {
                     // Gate output immediately — don't drain ~1s of soft buffer.
                     buffer.paused.store(true, Ordering::Relaxed);
                     playing = false;
                     *state.status.lock() = PlayerStatus::Paused;
+                    persist.save(&state, true);
                 }
                 PlayerCommand::Stop => {
                     playing = false;
@@ -369,6 +429,7 @@ fn run_player_worker(
                     state.position_ms.store(0, Ordering::Relaxed);
                     decode_origin_ms = 0;
                     decoded_frames = 0;
+                    persist.save(&state, true);
                 }
                 PlayerCommand::Next => {
                     let advanced = state.queue.lock().next_index(true).is_some();
@@ -382,6 +443,8 @@ fn run_player_worker(
                             &mut decoded_frames,
                             &source_rate,
                             true,
+                            true,
+                            0,
                         )?;
                     } else {
                         playing = false;
@@ -389,6 +452,7 @@ fn run_player_worker(
                         buffer.clear();
                         *state.status.lock() = PlayerStatus::Stopped;
                     }
+                    persist.save(&state, true);
                 }
                 PlayerCommand::Previous => {
                     let position = state.position_ms.load(Ordering::Relaxed);
@@ -411,8 +475,11 @@ fn run_player_worker(
                             &mut decoded_frames,
                             &source_rate,
                             true,
+                            true,
+                            0,
                         )?;
                     }
+                    persist.save(&state, true);
                 }
                 PlayerCommand::Seek(position_ms) => {
                     if let Some(active) = decoder.as_mut() {
@@ -424,6 +491,7 @@ fn run_player_worker(
                         decoded_frames = 0;
                         state.position_ms.store(position_ms, Ordering::Relaxed);
                     }
+                    persist.save(&state, true);
                 }
                 PlayerCommand::SetVolume(volume) => {
                     buffer
@@ -441,6 +509,7 @@ fn run_player_worker(
                     }
                     drop(queue);
                     emit_queue_changed(&app, &state);
+                    persist.save(&state, true);
                 }
                 PlayerCommand::SetRepeat(mode) => {
                     let mut queue = state.queue.lock();
@@ -449,6 +518,7 @@ fn run_player_worker(
                     }
                     drop(queue);
                     emit_queue_changed(&app, &state);
+                    persist.save(&state, true);
                 }
             }
         }
@@ -457,10 +527,7 @@ fn run_player_worker(
             if output.is_none() {
                 playing = false;
                 *state.status.lock() = PlayerStatus::Stopped;
-                let _ = app.emit(
-                    PLAYER_ERROR,
-                    "Audio device unavailable".to_string(),
-                );
+                let _ = app.emit(PLAYER_ERROR, "Audio device unavailable".to_string());
             } else if buffer.len() < (out_rate as usize * out_channels * 80) / 1000 {
                 match decoder.as_mut() {
                     Some(active) => match active.decode_next() {
@@ -488,9 +555,7 @@ fn run_player_worker(
                                 let fade_ms = state.crossfade_ms.load(Ordering::Relaxed);
                                 let clear = fade_ms == 0;
                                 if fade_ms > 0 {
-                                    let samples = ((out_rate as u64)
-                                        .saturating_mul(fade_ms)
-                                        / 1000
+                                    let samples = ((out_rate as u64).saturating_mul(fade_ms) / 1000
                                         * out_channels as u64)
                                         .min(u32::MAX as u64)
                                         as u32;
@@ -505,11 +570,12 @@ fn run_player_worker(
                                     &mut decoded_frames,
                                     &source_rate,
                                     clear,
+                                    true,
+                                    0,
                                 )?;
+                                persist.save(&state, true);
                                 if fade_ms > 0 && playing {
-                                    let samples = ((out_rate as u64)
-                                        .saturating_mul(fade_ms)
-                                        / 1000
+                                    let samples = ((out_rate as u64).saturating_mul(fade_ms) / 1000
                                         * out_channels as u64)
                                         .min(u32::MAX as u64)
                                         as u32;
@@ -519,6 +585,7 @@ fn run_player_worker(
                                 playing = false;
                                 decoder = None;
                                 *state.status.lock() = PlayerStatus::Stopped;
+                                persist.save(&state, true);
                             }
                         }
                         Err(err) => {
@@ -534,11 +601,15 @@ fn run_player_worker(
                                     &mut decoded_frames,
                                     &source_rate,
                                     true,
+                                    true,
+                                    0,
                                 )?;
+                                persist.save(&state, true);
                             } else {
                                 playing = false;
                                 decoder = None;
                                 *state.status.lock() = PlayerStatus::Stopped;
+                                persist.save(&state, true);
                             }
                         }
                     },
@@ -552,6 +623,7 @@ fn run_player_worker(
 
         if last_emit.elapsed() >= Duration::from_millis(200) {
             last_emit = Instant::now();
+            persist.save(&state, false);
             let _ = app.emit(
                 PLAYER_POSITION,
                 PositionEvent {
@@ -591,13 +663,15 @@ fn load_current(
     decoded_frames: &mut u64,
     source_rate: &AtomicU64,
     clear_buffer: bool,
+    autoplay: bool,
+    resume_ms: u64,
 ) -> Result<bool, AppError> {
     if clear_buffer {
         buffer.clear();
     }
-    *decode_origin_ms = 0;
+    *decode_origin_ms = resume_ms;
     *decoded_frames = 0;
-    state.position_ms.store(0, Ordering::Relaxed);
+    state.position_ms.store(resume_ms, Ordering::Relaxed);
 
     let track = {
         let queue = state.queue.lock();
@@ -614,7 +688,7 @@ fn load_current(
     };
 
     match SymphoniaDecoder::open(Path::new(&track.path)) {
-        Ok(active) => {
+        Ok(mut active) => {
             source_rate.store(active.sample_rate() as u64, Ordering::Relaxed);
             let duration = if track.duration_ms.unwrap_or(0) > 0 {
                 track.duration_ms.unwrap_or(0) as u64
@@ -623,12 +697,27 @@ fn load_current(
             };
             state.duration_ms.store(duration, Ordering::Relaxed);
             apply_track_gain(buffer, state, &track);
+            if resume_ms > 0 {
+                match active.seek_ms(resume_ms) {
+                    Ok(()) => {}
+                    Err(err) => {
+                        eprintln!("Restore seek failed: {err}");
+                        *decode_origin_ms = 0;
+                        state.position_ms.store(0, Ordering::Relaxed);
+                    }
+                }
+            }
             *state.current.lock() = Some(track);
-            *state.status.lock() = PlayerStatus::Playing;
-            buffer.paused.store(false, Ordering::Relaxed);
+            if autoplay {
+                *state.status.lock() = PlayerStatus::Playing;
+                buffer.paused.store(false, Ordering::Relaxed);
+            } else {
+                *state.status.lock() = PlayerStatus::Paused;
+                buffer.paused.store(true, Ordering::Relaxed);
+            }
             *decoder = Some(active);
             emit_track_changed(app, state);
-            Ok(true)
+            Ok(autoplay)
         }
         Err(err) => {
             let _ = app.emit(PLAYER_ERROR, err.to_string());
@@ -639,13 +728,72 @@ fn load_current(
     }
 }
 
+fn apply_session_to_shared_state(state: &SharedPlayerState, session: &PlaybackSession) {
+    {
+        let mut queue = state.queue.lock();
+        queue.replace(session.queue.clone(), session.queue_index);
+        queue.set_shuffle(session.shuffle);
+        queue.set_repeat(session.repeat);
+    }
+    if let Some(track) = session.queue.get(session.queue_index).cloned() {
+        let duration = track.duration_ms.unwrap_or(0).max(0) as u64;
+        *state.current.lock() = Some(track);
+        state
+            .position_ms
+            .store(session.position_ms, Ordering::Relaxed);
+        state.duration_ms.store(duration, Ordering::Relaxed);
+        *state.status.lock() = PlayerStatus::Paused;
+    }
+}
+
+fn session_from_state(state: &SharedPlayerState) -> Option<PlaybackSession> {
+    let queue = state.queue.lock();
+    let items = queue.items().to_vec();
+    if items.is_empty() {
+        return None;
+    }
+    Some(PlaybackSession {
+        queue: items,
+        queue_index: queue.index().unwrap_or(0),
+        position_ms: state.position_ms.load(Ordering::Relaxed),
+        shuffle: queue.shuffle(),
+        repeat: queue.repeat(),
+    })
+}
+
+struct SessionPersist {
+    data_dir: PathBuf,
+    last_write: Instant,
+}
+
+impl SessionPersist {
+    fn new(data_dir: PathBuf) -> Self {
+        Self {
+            data_dir,
+            last_write: Instant::now() - Duration::from_secs(10),
+        }
+    }
+
+    fn save(&mut self, state: &SharedPlayerState, force: bool) {
+        if !force {
+            let status = *state.status.lock();
+            if !matches!(status, PlayerStatus::Playing) {
+                return;
+            }
+            if self.last_write.elapsed() < Duration::from_secs(2) {
+                return;
+            }
+        }
+        self.last_write = Instant::now();
+        session::save(&self.data_dir, session_from_state(state).as_ref());
+    }
+}
+
 fn apply_track_gain(buffer: &SharedBuffer, state: &SharedPlayerState, track: &QueueTrack) {
     let mode = state.replay_gain_mode.load(Ordering::Relaxed);
     let gain = match mode {
         1 => track.replaygain_track_gain,
-        2 => track
-            .replaygain_album_gain
-            .or(track.replaygain_track_gain),
+        2 => track.replaygain_album_gain.or(track.replaygain_track_gain),
         _ => None,
     };
     buffer.dsp.set_track_gain_db(gain);

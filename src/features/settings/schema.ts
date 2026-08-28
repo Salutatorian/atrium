@@ -10,7 +10,7 @@ export const appSettingsSchema = z.object({
     /** Start Atrium when signing in to Windows / macOS / Linux. Default off. */
     launchAtLogin: z.boolean().default(false),
     restoreLastPage: z.boolean(),
-    restoreQueue: z.boolean(),
+    restoreQueue: z.boolean().default(true),
     language: z.string(),
     checkForUpdates: z.boolean().default(true),
     /** Quietly download + install on launch when an update is available. */
