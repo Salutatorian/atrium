@@ -40,6 +40,24 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-08-v1-7-2",
+    version: "1.7.2",
+    title: "Atrium 1.7.2",
+    date: "2026-08-28",
+    summary:
+      "The add-folder progress card stays put — long song names no longer stretch or spill out of the box.",
+    changes: [
+      {
+        kind: "fix",
+        text: "Scan progress (1/2, 2/2) stays inside the card while files are added",
+      },
+      {
+        kind: "polish",
+        text: "Long titles truncate instead of shoving the counter or growing the toast",
+      },
+    ],
+  },
+  {
     id: "2026-08-v1-7-1",
     version: "1.7.1",
     title: "Atrium 1.7.1",

@@ -2601,11 +2601,16 @@
   right: calc(var(--shell-gap) + 0.5rem);
   bottom: calc(96px + var(--player-offset));
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.55rem;
   width: min(380px, calc(100% - 2rem));
+  max-width: calc(100% - 2rem);
 }
 
 .task-card {
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
   border-radius: var(--radius-md);
   background: color-mix(in oklab, var(--color-raised-background) 90%, transparent);
   backdrop-filter: blur(var(--blur-strength));
@@ -2616,9 +2621,18 @@
 .task-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.65rem;
+  min-width: 0;
   font-size: 0.85rem;
+}
+
+.task-card__header strong {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .task-card__header-end {
@@ -2626,15 +2640,26 @@
   align-items: center;
   gap: 0.45rem;
   color: var(--color-secondary-text);
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  max-width: 52%;
+  min-width: 0;
+}
+
+.task-card__count {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .task-card__dismiss {
   display: inline-grid;
   place-items: center;
+  flex-shrink: 0;
   width: 1.55rem;
   height: 1.55rem;
-  margin: -0.15rem -0.2rem -0.15rem 0;
+  margin: 0;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -2657,11 +2682,14 @@
 
 .task-card__fill {
   height: 100%;
+  max-width: 100%;
   background: var(--color-progress-fill);
 }
 
 .task-card__path {
   margin: 0.45rem 0 0;
+  min-width: 0;
+  max-width: 100%;
   color: var(--color-muted-text);
   font-size: 0.78rem;
   overflow: hidden;
@@ -2682,6 +2710,7 @@
 .task-card__errors li {
   display: grid;
   gap: 0.12rem;
+  min-width: 0;
   font-size: 0.74rem;
   color: var(--color-secondary-text);
   padding-bottom: 0.35rem;

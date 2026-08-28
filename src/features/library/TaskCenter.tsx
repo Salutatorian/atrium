@@ -77,7 +77,7 @@ export function TaskCenter() {
             <div className="task-card__header">
               <strong>{statusLabel(job.status)}</strong>
               <div className="task-card__header-end">
-                <span>
+                <span className="task-card__count">
                   {job.processed}/{job.discovered}
                   {job.errors > 0 ? ` · ${job.errors} errors` : ""}
                 </span>
@@ -110,8 +110,14 @@ export function TaskCenter() {
             <div className="task-card__bar" aria-hidden="true">
               <div className="task-card__fill" style={{ width: `${pct}%` }} />
             </div>
-            {job.currentPath || job.message ? (
-              <p className="task-card__path">{job.message || job.currentPath}</p>
+            {job.message || job.currentPath ? (
+              <p
+                className="task-card__path"
+                title={job.currentPath ?? job.message ?? undefined}
+              >
+                {job.message ||
+                  (job.currentPath ? fileNameFromPath(job.currentPath) : "")}
+              </p>
             ) : null}
             {finished && samples.length > 0 ? (
               <ul className="task-card__errors">
