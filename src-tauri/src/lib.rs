@@ -104,6 +104,7 @@ pub fn run() {
             commands::list_library_folders,
             commands::list_library_roots,
             commands::remove_library_folder,
+            commands::remove_indexed_folder,
             commands::get_artwork_path,
             commands::rescan_library,
             commands::get_library_track,

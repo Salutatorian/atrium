@@ -102,6 +102,10 @@ export async function removeLibraryFolder(rootId: number): Promise<void> {
   await invoke("remove_library_folder", { rootId });
 }
 
+export async function removeIndexedFolder(folderId: number): Promise<void> {
+  await invoke("remove_indexed_folder", { folderId });
+}
+
 export async function rescanLibrary(): Promise<string> {
   return invoke<string>("rescan_library");
 }

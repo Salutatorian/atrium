@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import {
-  fetchLibraryRoots,
   pickMusicFiles,
   pickMusicFolder,
-  removeLibraryFolder,
+  removeIndexedFolder,
   startLibraryScan,
 } from "./api";
 import { ArtworkImage } from "./ArtworkImage";
 import { LibraryToolbar } from "./LibraryToolbar";
 import { TrackList } from "./TrackList";
-import type { LibraryRootSummary } from "./types";
 import { useLibraryStore } from "../../stores/library-store";
 import { isTauriRuntime } from "../../services/tauri";
 
@@ -89,71 +87,62 @@ export function ArtistsPage({ embedded = false }: EmbeddedProps) {
 }
 
 export function FoldersPage({ embedded = false }: EmbeddedProps) {
+  const folders = useLibraryStore((s) => s.folders);
+  const loadFolders = useLibraryStore((s) => s.loadFolders);
   const refreshAll = useLibraryStore((s) => s.refreshAll);
-  const [roots, setRoots] = useState<LibraryRootSummary[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
-    void fetchLibraryRoots()
-      .then((items) => {
-        if (!cancelled) {
-          setRoots(items);
-          setError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [version]);
+    void loadFolders().catch((err: unknown) => {
+      setError(err instanceof Error ? err.message : String(err));
+    });
+  }, [loadFolders, version]);
+
+  const visible = folders.filter((folder) => folder.trackCount > 0);
 
   return (
     <section className="library-page" aria-label="Folders">
       {embedded ? null : <LibraryToolbar />}
       <p className="panel__intro">
-        Folders you add are indexed in place. To drop one, use{" "}
-        <strong>Remove from library</strong> on that row — your files stay on
-        disk; only Atrium&apos;s index clears. Liked songs from that folder stay
-        in Liked.
+        Each folder lists only the songs sitting in it — songs in a subfolder
+        stay on that subfolder.{" "}
+        <strong>Remove from library</strong> clears Atrium&apos;s index for this
+        folder; your files stay on disk. Liked songs stay in Liked.
       </p>
 
       {error ? <p className="settings-note">{error}</p> : null}
 
-      {roots.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="empty-panel__detail">
           No folders yet. Use Add folder or Add songs above to start a new library.
         </p>
       ) : (
         <ul className="library-roots">
-          {roots.map((root) => (
-            <li key={root.id} className="library-root-row">
+          {visible.map((folder) => (
+            <li key={folder.id} className="library-root-row">
               <div className="library-root-row__meta">
-                <strong>{root.label}</strong>
-                <p className="muted folder-row__path" title={root.path}>
-                  {root.path}
+                <strong>{folder.name}</strong>
+                <p className="muted folder-row__path" title={folder.path}>
+                  {folder.path}
                 </p>
                 <span className="muted">
-                  {root.trackCount} {root.trackCount === 1 ? "song" : "songs"}
+                  {folder.trackCount}{" "}
+                  {folder.trackCount === 1 ? "song" : "songs"}
                 </span>
               </div>
               <button
                 type="button"
                 className="button-danger"
-                disabled={!isTauriRuntime() || busyId === root.id}
+                disabled={!isTauriRuntime() || busyId === folder.id}
                 onClick={() => {
                   const ok = window.confirm(
-                    `Remove “${root.label}” from your library?\n\nYour music files stay on disk. Only Atrium’s index for this folder is cleared. Liked songs from this folder stay in Liked.`,
+                    `Remove “${folder.name}” from your library?\n\nYour music files stay on disk. Only songs in this folder are cleared — songs in other folders are left alone. Liked songs from this folder stay in Liked.`,
                   );
                   if (!ok) return;
-                  setBusyId(root.id);
-                  void removeLibraryFolder(root.id)
+                  setBusyId(folder.id);
+                  void removeIndexedFolder(folder.id)
                     .then(async () => {
                       await refreshAll();
                       setVersion((v) => v + 1);
@@ -164,7 +153,7 @@ export function FoldersPage({ embedded = false }: EmbeddedProps) {
                     .finally(() => setBusyId(null));
                 }}
               >
-                {busyId === root.id ? "Removing…" : "Remove from library"}
+                {busyId === folder.id ? "Removing…" : "Remove from library"}
               </button>
             </li>
           ))}

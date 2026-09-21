@@ -17,9 +17,9 @@ export function IconHome(props: IconProps) {
 export function IconSongs(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M7.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-      <path d="M10 15.5V6l6.5-1.25V14" />
-      <path d="M16.5 16.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+      <circle cx="7.25" cy="17.25" r="2.45" />
+      <circle cx="16.35" cy="15.6" r="2.45" />
+      <path d="M9.7 14.8V6.15l6.65-1.2V13.15" />
     </Svg>
   );
 }

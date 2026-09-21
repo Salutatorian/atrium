@@ -19,6 +19,7 @@ import { useSearchHotkey } from "../../hooks/use-search-hotkey";
 import { useShellModeKeys } from "../../hooks/use-shell-mode-keys";
 import { useSystemTheme } from "../../hooks/use-system-theme";
 import { useAppFonts } from "../../hooks/use-app-fonts";
+import { useAtriumControls } from "../../hooks/use-atrium-controls";
 import { useVisualizerChrome } from "../../hooks/use-visualizer-chrome";
 import { useSettingsStore } from "../../stores/settings-store";
 import { cn } from "../../utils/cn";
@@ -46,6 +47,7 @@ export function AppShell({ appName }: AppShellProps) {
   useSearchHotkey();
   useAppUpdater();
   useAppFonts();
+  useAtriumControls();
 
   const mini = shellMode === "mini";
   const visualizer = isVisualizerShell(shellMode);

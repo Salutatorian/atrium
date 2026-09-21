@@ -40,6 +40,32 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-09-v1-7-4",
+    version: "1.7.4",
+    title: "Atrium 1.7.4",
+    date: "2026-09-21",
+    summary:
+      "Folders list each directory on its own, with Atrium sliders and checkboxes throughout, and a few display fixes.",
+    changes: [
+      {
+        kind: "fix",
+        text: "Folders only count songs sitting in that folder — nested folders keep their own counts",
+      },
+      {
+        kind: "fix",
+        text: "Library note icon: the right head is no longer cut through by the stem",
+      },
+      {
+        kind: "improve",
+        text: "Theme cards keep the full name instead of truncating it on the swatch",
+      },
+      {
+        kind: "polish",
+        text: "Range sliders and checkboxes use Atrium’s own look everywhere they appear",
+      },
+    ],
+  },
+  {
     id: "2026-09-v1-7-3",
     version: "1.7.3",
     title: "Atrium 1.7.3",

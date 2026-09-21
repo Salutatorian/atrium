@@ -180,7 +180,6 @@ export function ThemesStudio() {
                     borderColor: item.colors.accent,
                   }}
                 >
-                  <span className="theme-card__swatch-label">{item.name}</span>
                   <span
                     className="theme-card__dots"
                     aria-hidden="true"

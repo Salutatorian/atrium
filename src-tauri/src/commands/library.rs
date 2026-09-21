@@ -7,7 +7,8 @@ use crate::library::models::{
 use crate::library::repository::{
     get_track_by_id, library_stats, list_albums, list_artists, list_folders,
     list_library_root_summaries, list_scan_jobs, list_top_level_library_roots, list_tracks,
-    remove_library_root, resolve_artwork_file, update_track_tags,
+    remove_indexed_folder as delete_indexed_folder, remove_library_root, resolve_artwork_file,
+    update_track_tags,
 };
 use crate::library::scanner::classify_drop_paths;
 use serde::Serialize;
@@ -112,6 +113,18 @@ pub fn remove_library_folder(
     }
     let db = state.db.lock();
     remove_library_root(&db, root_id)
+}
+
+#[tauri::command]
+pub fn remove_indexed_folder(
+    state: State<'_, AppState>,
+    folder_id: i64,
+) -> Result<(), AppError> {
+    if folder_id <= 0 {
+        return Err(AppError::Message("Invalid folder".into()));
+    }
+    let db = state.db.lock();
+    delete_indexed_folder(&db, folder_id)
 }
 
 #[derive(Debug, Serialize)]

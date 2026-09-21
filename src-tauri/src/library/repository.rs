@@ -597,6 +597,9 @@ pub fn list_folders(db: &Database) -> Result<Vec<FolderSummary>, AppError> {
                  JOIN tracks t ON t.file_id = fi.id
                  WHERE fi.folder_id = f.id AND t.missing = 0) as track_count
          FROM folders f
+         WHERE (SELECT COUNT(*) FROM files fi
+                 JOIN tracks t ON t.file_id = fi.id
+                 WHERE fi.folder_id = f.id AND t.missing = 0) > 0
          ORDER BY f.path",
     )?;
     let items = stmt
@@ -900,15 +903,9 @@ pub fn list_library_root_summaries(db: &Database) -> Result<Vec<LibraryRootSumma
                 (SELECT COUNT(*)
                  FROM tracks t
                  JOIN files f ON f.id = t.file_id
-                 LEFT JOIN folders fo ON fo.id = f.folder_id
+                 JOIN folders fo ON fo.id = f.folder_id
                  WHERE t.missing = 0
-                   AND (
-                     fo.root_id = r.id
-                     OR lower(replace(f.path, '\\', '/'))
-                        LIKE lower(replace(r.path, '\\', '/')) || '/%'
-                     OR lower(replace(f.path, '\\', '/'))
-                        = lower(replace(r.path, '\\', '/'))
-                   )
+                   AND fo.path = r.path
                 ) as track_count
          FROM library_roots r
          WHERE r.enabled = 1
@@ -1041,6 +1038,42 @@ pub fn remove_library_root(db: &Database, root_id: i64) -> Result<(), AppError> 
     delete_files_preserving_favorites(db, &file_ids)?;
 
     conn.execute("DELETE FROM library_roots WHERE id = ?1", params![root_id])?;
+    Ok(())
+}
+
+/// Unindex songs that sit in this folder only — never descendants, never files on disk.
+pub fn remove_indexed_folder(db: &Database, folder_id: i64) -> Result<(), AppError> {
+    if folder_id <= 0 {
+        return Err(AppError::Message("Invalid folder".into()));
+    }
+    let conn = db.conn();
+    let root_id: i64 = conn
+        .query_row(
+            "SELECT root_id FROM folders WHERE id = ?1",
+            params![folder_id],
+            |row| row.get(0),
+        )
+        .map_err(|_| AppError::Message("Folder not found".into()))?;
+
+    let file_ids: Vec<i64> = {
+        let mut stmt = conn.prepare("SELECT id FROM files WHERE folder_id = ?1")?;
+        let rows = stmt.query_map(params![folder_id], |row| row.get(0))?;
+        rows.collect::<Result<Vec<_>, _>>()?
+    };
+
+    delete_files_preserving_favorites(db, &file_ids)?;
+
+    let conn = db.conn();
+    conn.execute("DELETE FROM folders WHERE id = ?1", params![folder_id])?;
+
+    let remaining: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM folders WHERE root_id = ?1",
+        params![root_id],
+        |row| row.get(0),
+    )?;
+    if remaining == 0 {
+        conn.execute("DELETE FROM library_roots WHERE id = ?1", params![root_id])?;
+    }
     Ok(())
 }
 
