@@ -64,13 +64,13 @@
   --spacing-scale: 0.78;
   --control-height: 28px;
   --density-font-adjust: -1px;
-  --density-list-gap: 0.35rem;
-  --density-row-pad-y: 0.38rem;
-  --density-row-pad-x: 0.1rem;
-  --density-art-size: 36px;
+  --density-list-gap: 0.4rem;
+  --density-row-pad-y: 0.08rem;
+  --density-row-pad-x: 0.35rem;
+  --density-art-size: 0px;
   --density-workspace-pad: 1.15rem;
   --font-size-base: 13px;
-  --line-height: 1.35;
+  --line-height: 1.25;
 }
 
 /* Comfortable: default breathing room */

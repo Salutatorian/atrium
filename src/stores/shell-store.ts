@@ -21,6 +21,7 @@ type ShellState = {
   inspectorWidth: number;
   inspectorTab: DrawerTab;
   nowPlayingOpen: boolean;
+  settingsOpen: boolean;
   setActiveNav: (id: NavId) => void;
   setLibraryTab: (tab: LibraryTab) => void;
   toggleSidebar: () => void;
@@ -32,6 +33,9 @@ type ShellState = {
   openDrawer: (tab: DrawerTab) => void;
   toggleDrawer: (tab: DrawerTab) => void;
   setNowPlayingOpen: (open: boolean) => void;
+  openSettings: () => void;
+  closeSettings: () => void;
+  toggleSettings: () => void;
 };
 
 export const useShellStore = create<ShellState>((set, get) => ({
@@ -42,7 +46,14 @@ export const useShellStore = create<ShellState>((set, get) => ({
   inspectorWidth: 380,
   inspectorTab: "queue",
   nowPlayingOpen: false,
-  setActiveNav: (activeNav) => set({ activeNav, nowPlayingOpen: false }),
+  settingsOpen: false,
+  setActiveNav: (activeNav) => {
+    if (activeNav === "settings") {
+      set({ settingsOpen: true, nowPlayingOpen: false });
+      return;
+    }
+    set({ activeNav, nowPlayingOpen: false, settingsOpen: false });
+  },
   setLibraryTab: (libraryTab) => set({ libraryTab }),
   toggleSidebar: () =>
     set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
@@ -65,4 +76,11 @@ export const useShellStore = create<ShellState>((set, get) => ({
     set({ inspectorOpen: true, inspectorTab: tab });
   },
   setNowPlayingOpen: (nowPlayingOpen) => set({ nowPlayingOpen }),
+  openSettings: () => set({ settingsOpen: true, nowPlayingOpen: false }),
+  closeSettings: () => set({ settingsOpen: false }),
+  toggleSettings: () =>
+    set((state) => ({
+      settingsOpen: !state.settingsOpen,
+      nowPlayingOpen: state.settingsOpen ? state.nowPlayingOpen : false,
+    })),
 }));

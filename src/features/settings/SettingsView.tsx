@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   APP_DESCRIPTION,
@@ -8,7 +8,9 @@ import {
   DONATE_AMOUNTS,
 } from "../../app/brand";
 import { BrandLogo } from "../../app/shell/BrandLogo";
+import { IconClose } from "../../components/icons";
 import { Tooltip } from "../../components/Tooltip";
+import { useShellStore } from "../../stores/shell-store";
 import { isTauriRuntime } from "../../services/tauri";
 import {
   APP_FONTS,
@@ -67,12 +69,72 @@ async function openExternal(url: string): Promise<void> {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-export function SettingsView() {
-  const [category, setCategory] = useState<SettingsCategory>("themes");
+export function SettingsWindow() {
+  const open = useShellStore((s) => s.settingsOpen);
+  const closeSettings = useShellStore((s) => s.closeSettings);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement;
+    dialogRef.current?.focus();
+
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeSettings();
+    }
+
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      if (previous instanceof HTMLElement) previous.focus();
+    };
+  }, [open, closeSettings]);
+
+  if (!open) return null;
 
   return (
-    <section className="settings-view" aria-label="Settings">
-      <h1 className="view-title">Settings</h1>
+    <div
+      className="settings-window-scrim"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) closeSettings();
+      }}
+    >
+      <div
+        ref={dialogRef}
+        className="settings-window"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-window-title"
+        tabIndex={-1}
+      >
+        <header className="settings-window__header">
+          <h1 id="settings-window-title" className="settings-window__title">
+            Settings
+          </h1>
+          <button
+            type="button"
+            className="settings-window__close"
+            aria-label="Close settings"
+            onClick={closeSettings}
+          >
+            <IconClose />
+          </button>
+        </header>
+        <SettingsView />
+      </div>
+    </div>
+  );
+}
+
+export function SettingsView() {
+  const [category, setCategory] = useState<SettingsCategory>("general");
+
+  return (
+    <section className="settings-view settings-view--window" aria-label="Settings">
       <div className="settings-view__layout">
         <nav className="settings-nav" aria-label="Settings categories">
           {categories.map((item) => (
@@ -502,8 +564,10 @@ function AppearanceSettings({
             });
           }}
         >
-          <option value="compact">Compact — tight lists & smaller type</option>
-          <option value="comfortable">Comfortable — default spacing</option>
+          <option value="comfortable">
+            Original — covers & two-line rows (default)
+          </option>
+          <option value="compact">Compact — no covers, one-line rows</option>
           <option value="spacious">Spacious — roomy rows & larger hits</option>
         </select>
       </label>

@@ -25,6 +25,7 @@ export function useShellModeKeys() {
       }
 
       if (event.code !== "Escape") return;
+      if (useShellStore.getState().settingsOpen) return;
       if (shellMode === "normal") return;
       if (event.defaultPrevented) return;
       if (useShellStore.getState().inspectorOpen) return;

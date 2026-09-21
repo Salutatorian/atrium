@@ -11,7 +11,9 @@ import { primaryNav, utilityNav } from "./nav-items";
 export function NavRail() {
   const activeNav = useShellStore((s) => s.activeNav);
   const expanded = useShellStore((s) => s.sidebarExpanded);
+  const settingsOpen = useShellStore((s) => s.settingsOpen);
   const setActiveNav = useShellStore((s) => s.setActiveNav);
+  const toggleSettings = useShellStore((s) => s.toggleSettings);
   const toggleSidebar = useShellStore((s) => s.toggleSidebar);
   const patchAppearance = useSettingsStore((s) => s.patchAppearance);
   const updateAvailable = useUpdateStore(
@@ -75,19 +77,31 @@ export function NavRail() {
           {utilityNav.map((item) => {
             const { Icon } = item;
             const showBadge = item.id === "settings" && updateAvailable;
+            const isSettings = item.id === "settings";
             const button = (
               <button
                 type="button"
                 className={cn(
                   "nav-item",
-                  activeNav === item.id && "nav-item--active",
+                  (isSettings ? settingsOpen : activeNav === item.id) &&
+                    "nav-item--active",
                   showBadge && "nav-item--badge",
                 )}
-                aria-current={activeNav === item.id ? "page" : undefined}
+                aria-current={
+                  isSettings ? undefined : activeNav === item.id ? "page" : undefined
+                }
+                aria-expanded={isSettings ? settingsOpen : undefined}
+                aria-haspopup={isSettings ? "dialog" : undefined}
                 aria-label={
                   showBadge ? `${item.label} (update available)` : item.label
                 }
-                onClick={() => setActiveNav(item.id)}
+                onClick={() => {
+                  if (isSettings) {
+                    toggleSettings();
+                    return;
+                  }
+                  setActiveNav(item.id);
+                }}
               >
                 <Icon className="nav-item__icon" />
                 {expanded ? (

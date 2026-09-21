@@ -6,6 +6,7 @@ import { ArtworkImage } from "./ArtworkImage";
 import type { TrackSummary } from "./types";
 import { useLibraryStore } from "../../stores/library-store";
 import { usePlayerStore } from "../../stores/player-store";
+import { useSettingsStore } from "../../stores/settings-store";
 import { cn } from "../../utils/cn";
 
 function trackTitle(track: TrackSummary): string {
@@ -18,6 +19,13 @@ function trackArtist(track: TrackSummary): string {
 
 function trackCopyLine(track: TrackSummary): string {
   return `${trackTitle(track)} – ${trackArtist(track)}`;
+}
+
+function compactDuration(ms?: number | null): string {
+  const raw = formatDuration(ms);
+  if (raw === "—:—") return raw;
+  const [minutes = "0", seconds = "00"] = raw.split(":");
+  return `${minutes.padStart(2, "0")}:${seconds}`;
 }
 
 async function copyText(text: string): Promise<void> {
@@ -57,6 +65,9 @@ export function TrackList() {
   const loadMoreTracks = useLibraryStore((s) => s.loadMoreTracks);
   const currentId = usePlayerStore((s) => s.current?.trackId);
   const applySnapshot = usePlayerStore((s) => s.applySnapshot);
+  const density = useSettingsStore((s) => s.settings.appearance.density);
+  const compact = density === "compact";
+  const rowSize = compact ? 24 : density === "spacious" ? 84 : 68;
   const parentRef = useRef<HTMLDivElement>(null);
   const scrolledToPlayingRef = useRef(false);
   const [copyMenu, setCopyMenu] = useState<CopyMenuState | null>(null);
@@ -65,8 +76,8 @@ export function TrackList() {
   const virtualizer = useVirtualizer({
     count: tracks.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 68,
-    overscan: 12,
+    estimateSize: () => rowSize,
+    overscan: compact ? 28 : 12,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -113,6 +124,10 @@ export function TrackList() {
   }, [copyMenu]);
 
   useEffect(() => {
+    virtualizer.measure();
+  }, [rowSize, virtualizer]);
+
+  useEffect(() => {
     function onKeyUp(event: KeyboardEvent) {
       if (event.key === "Alt") setTextSelectMode(false);
     }
@@ -153,7 +168,11 @@ export function TrackList() {
             <div
               key={track.id}
               data-track-id={track.id}
-              className={cn("track-row", active && "track-row--active")}
+              className={cn(
+                "track-row",
+                compact && "track-row--compact",
+                active && "track-row--active",
+              )}
               role="button"
               tabIndex={0}
               aria-current={active ? "true" : undefined}
@@ -205,23 +224,35 @@ export function TrackList() {
                 }
               }}
             >
-              <ArtworkImage
-                className="track-row__art"
-                cacheKey={track.artworkCacheKey}
-                alt=""
-              />
-              <div className="track-row__meta">
-                <span className="track-row__title">
-                  {trackTitle(track)}
-                </span>
-                <span className="track-row__sub">
-                  {trackArtist(track)}
-                  {track.album ? ` · ${track.album}` : ""}
-                </span>
-              </div>
-              <span className="track-row__duration">
-                {formatDuration(track.durationMs)}
-              </span>
+              {compact ? (
+                <>
+                  <div className="track-row__meta track-row__meta--inline">
+                    <span className="track-row__artist">{trackArtist(track)}</span>
+                    <span className="track-row__title">{trackTitle(track)}</span>
+                  </div>
+                  <span className="track-row__duration">
+                    {compactDuration(track.durationMs)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <ArtworkImage
+                    className="track-row__art"
+                    cacheKey={track.artworkCacheKey}
+                    alt=""
+                  />
+                  <div className="track-row__meta">
+                    <span className="track-row__title">{trackTitle(track)}</span>
+                    <span className="track-row__sub">
+                      {trackArtist(track)}
+                      {track.album ? ` · ${track.album}` : ""}
+                    </span>
+                  </div>
+                  <span className="track-row__duration">
+                    {formatDuration(track.durationMs)}
+                  </span>
+                </>
+              )}
             </div>
           );
         })}

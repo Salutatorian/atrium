@@ -87,7 +87,7 @@ export function getShortcutCatalog(): ShortcutGroup[] {
         },
         {
           id: "escape",
-          action: "Close drawer / now playing / exit mini or visualizer",
+          action: "Close settings / drawer / now playing / exit mini or visualizer",
           chords: [{ code: "Escape", key: "Escape" }],
           labels: [["Esc"]],
         },

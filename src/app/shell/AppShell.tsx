@@ -27,6 +27,7 @@ import { NavRail } from "./NavRail";
 import { PlayerBar } from "./PlayerBar";
 import { TitleBar } from "./TitleBar";
 import { Workspace } from "./Workspace";
+import { SettingsWindow } from "../../features/settings/SettingsView";
 
 type AppShellProps = {
   appName: string;
@@ -107,6 +108,7 @@ export function AppShell({ appName }: AppShellProps) {
           <PlayerBar reducedMotion={reducedMotion} />
         </div>
         <NowPlayingOverlay />
+        <SettingsWindow />
         <YearLookbackAutoOpen />
         <UpdateToast />
         <PostUpdateDialog />

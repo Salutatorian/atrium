@@ -40,6 +40,28 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-09-v1-7-3",
+    version: "1.7.3",
+    title: "Atrium 1.7.3",
+    date: "2026-09-21",
+    summary:
+      "A compact no-cover song list you can opt into, and Settings now opens as a small window in front of the library.",
+    changes: [
+      {
+        kind: "add",
+        text: "Compact density: one-line artist + title rows with no artwork",
+      },
+      {
+        kind: "improve",
+        text: "Original cover list stays the default; switch Density in Settings anytime",
+      },
+      {
+        kind: "improve",
+        text: "Settings pops a compact window over a lightly blurred library instead of taking the whole page",
+      },
+    ],
+  },
+  {
     id: "2026-08-v1-7-2",
     version: "1.7.2",
     title: "Atrium 1.7.2",
