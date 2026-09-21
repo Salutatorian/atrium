@@ -62,24 +62,29 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: Atrium v__VERSION__
-          releaseBody: |
-            Click the mini soundbars to open Visualizer Mode — full-window scenes like Ambience, Tunnel, and Plasma. Esc exits. F11 is real fullscreen.
-
-            ## Download (pick one)
-
-            | Your computer | File to download |
-            | --- | --- |
-            | **Windows** | `Atrium_*_x64-setup.exe` |
-            | **Mac with Apple chip** (M1 / M2 / M3 / M4) | `Atrium_*_aarch64.dmg` |
-            | **Mac with Intel chip** | `Atrium_*_x64.dmg` |
-            | **Linux** | `Atrium_*_amd64.AppImage` |
-
-            macOS tip: first open may need right-click → **Open**.
-            Windows tip: SmartScreen may warn until code signing is added.
-
-            Ignore `.sig`, `.app.tar.gz`, and `latest.json` — those are only for in-app updates.
+          releaseBody: Download buttons are added when this build finishes.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
           uploadUpdaterJson: true
           updaterJsonPreferNsis: true
+
+  # Clickable OS table (Helium-style badges) after every matrix upload has finished.
+  publish-download-table:
+    needs: publish-tauri
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write download table onto the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          BASE="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+          sed \
+            -e "s|__BASE__|${BASE}|g" \
+            -e "s|__VERSION__|${VERSION}|g" \
+            .github/release-download-table.md > /tmp/release-notes.md
+          gh release edit "$TAG" --notes-file /tmp/release-notes.md
