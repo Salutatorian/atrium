@@ -590,29 +590,16 @@ pub fn list_artists(db: &Database, offset: i64, limit: i64) -> Result<Page<Artis
 }
 
 pub fn list_folders(db: &Database) -> Result<Vec<FolderSummary>, AppError> {
-    let conn = db.conn();
-    let mut stmt = conn.prepare(
-        "SELECT f.id, f.path, f.name,
-                (SELECT COUNT(*) FROM files fi
-                 JOIN tracks t ON t.file_id = fi.id
-                 WHERE fi.folder_id = f.id AND t.missing = 0) as track_count
-         FROM folders f
-         WHERE (SELECT COUNT(*) FROM files fi
-                 JOIN tracks t ON t.file_id = fi.id
-                 WHERE fi.folder_id = f.id AND t.missing = 0) > 0
-         ORDER BY f.path",
-    )?;
-    let items = stmt
-        .query_map([], |row| {
-            Ok(FolderSummary {
-                id: row.get(0)?,
-                path: row.get(1)?,
-                name: row.get(2)?,
-                track_count: row.get(3)?,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(items)
+    Ok(list_library_root_summaries(db)?
+        .into_iter()
+        .map(|root| FolderSummary {
+            id: root.id,
+            path: root.path,
+            name: root.label,
+            track_count: root.track_count,
+        })
+        .filter(|folder| folder.track_count > 0)
+        .collect())
 }
 
 pub fn library_stats(db: &Database) -> Result<LibraryStats, AppError> {
@@ -895,33 +882,63 @@ pub fn list_top_level_library_roots(db: &Database) -> Result<Vec<String>, AppErr
     Ok(tops)
 }
 
-/// User-facing library sources (folders they added), with indexed track counts.
+/// User-facing library sources (folders they added). Nested albums roll into
+/// that added folder. If one added folder sits inside another, each keeps its
+/// own songs (the inner folder is not counted twice).
 pub fn list_library_root_summaries(db: &Database) -> Result<Vec<LibraryRootSummary>, AppError> {
     let conn = db.conn();
-    let mut stmt = conn.prepare(
-        "SELECT r.id, r.path, COALESCE(NULLIF(r.label, ''), r.path),
-                (SELECT COUNT(*)
-                 FROM tracks t
-                 JOIN files f ON f.id = t.file_id
-                 JOIN folders fo ON fo.id = f.folder_id
-                 WHERE t.missing = 0
-                   AND fo.path = r.path
-                ) as track_count
-         FROM library_roots r
-         WHERE r.enabled = 1
-         ORDER BY r.label COLLATE NOCASE, r.path COLLATE NOCASE",
+    let mut root_stmt = conn.prepare(
+        "SELECT id, path, COALESCE(NULLIF(label, ''), path)
+         FROM library_roots
+         WHERE enabled = 1",
     )?;
-    let items = stmt
+    let mut roots: Vec<(i64, PathBuf, String, i64)> = root_stmt
         .query_map([], |row| {
-            Ok(LibraryRootSummary {
-                id: row.get(0)?,
-                path: row.get(1)?,
-                label: row.get(2)?,
-                track_count: row.get(3)?,
-            })
+            let path: String = row.get(1)?;
+            Ok((row.get(0)?, PathBuf::from(path), row.get(2)?, 0i64))
         })?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(items)
+
+    let mut file_stmt = conn.prepare(
+        "SELECT fo.path
+         FROM tracks t
+         JOIN files f ON f.id = t.file_id
+         JOIN folders fo ON fo.id = f.folder_id
+         WHERE t.missing = 0",
+    )?;
+    let folder_paths: Vec<String> = file_stmt
+        .query_map([], |row| row.get(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    for folder_path in folder_paths {
+        let file_folder = PathBuf::from(&folder_path);
+        let mut best: Option<usize> = None;
+        let mut best_len = -1isize;
+        for (index, (_, root_path, _, _)) in roots.iter().enumerate() {
+            if !path_is_within(root_path, &file_folder) {
+                continue;
+            }
+            let len = root_path.as_os_str().len() as isize;
+            if len > best_len {
+                best_len = len;
+                best = Some(index);
+            }
+        }
+        if let Some(index) = best {
+            roots[index].3 += 1;
+        }
+    }
+
+    roots.sort_by(|a, b| a.2.to_lowercase().cmp(&b.2.to_lowercase()));
+    Ok(roots
+        .into_iter()
+        .map(|(id, path, label, track_count)| LibraryRootSummary {
+            id,
+            path: path.to_string_lossy().to_string(),
+            label,
+            track_count,
+        })
+        .collect())
 }
 
 /// Refresh favorite snapshots for tracks about to leave the library.
@@ -1006,6 +1023,12 @@ pub fn remove_library_root(db: &Database, root_id: i64) -> Result<(), AppError> 
 
     let root = normalize_path(Path::new(&root_path));
 
+    let other_roots: Vec<PathBuf> = {
+        let mut stmt = conn.prepare("SELECT path FROM library_roots WHERE enabled = 1 AND id != ?1")?;
+        let rows = stmt.query_map(params![root_id], |row| row.get::<_, String>(0))?;
+        rows.filter_map(|row| row.ok().map(PathBuf::from)).collect()
+    };
+
     let folder_ids: Vec<i64> = {
         let mut stmt = conn.prepare("SELECT id FROM folders WHERE root_id = ?1")?;
         let rows = stmt.query_map(params![root_id], |row| row.get(0))?;
@@ -1025,10 +1048,17 @@ pub fn remove_library_root(db: &Database, root_id: i64) -> Result<(), AppError> 
             })?
             .collect::<Result<Vec<_>, _>>()?;
         for (id, path, folder_id) in rows {
+            let file_path = PathBuf::from(&path);
+            let covered_by_other = other_roots
+                .iter()
+                .any(|other| path_is_within(other, &file_path));
+            if covered_by_other {
+                continue;
+            }
             let via_folder = folder_id
                 .map(|fid| folder_ids.contains(&fid))
                 .unwrap_or(false);
-            if via_folder || path_is_within(&root, Path::new(&path)) {
+            if via_folder || path_is_within(&root, &file_path) {
                 file_ids.push(id);
             }
         }

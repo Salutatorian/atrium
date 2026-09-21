@@ -140,6 +140,16 @@ export function IconClose(props: IconProps) {
   );
 }
 
+export function IconHelp(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M9.55 9.7a2.5 2.5 0 1 1 3.15 2.4c-.8.32-1.2.82-1.2 1.65" />
+      <path d="M12 16.45v.2" />
+    </Svg>
+  );
+}
+
 export function IconCollapse(props: IconProps) {
   return (
     <Svg {...props}>

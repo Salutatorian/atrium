@@ -100,12 +100,15 @@ button:disabled {
 }
 
 .tooltip-content {
-  z-index: 60;
+  z-index: 70;
+  max-width: 18rem;
   border-radius: var(--radius-sm);
   background: var(--color-tooltip-background);
   color: var(--color-tooltip-text);
-  padding: 0.35rem 0.55rem;
+  padding: 0.45rem 0.65rem;
   font-size: 0.78rem;
+  line-height: 1.4;
+  white-space: normal;
   box-shadow: 0 8px 24px rgb(0 0 0 / calc(var(--shadow-strength) * 0.35));
   animation: tooltip-in 140ms ease;
 }

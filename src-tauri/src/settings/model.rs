@@ -392,7 +392,19 @@ impl AppSettings {
         let scene = self.appearance.visualizer_scene.as_str();
         if !matches!(
             scene,
-            "ambience" | "tunnel" | "plasma" | "starfield" | "particles" | "vortex" | "ribbons"
+            "ambience"
+                | "tunnel"
+                | "plasma"
+                | "starfield"
+                | "particles"
+                | "vortex"
+                | "ribbons"
+                | "hurricane"
+                | "hyperspace"
+                | "eggs"
+                | "cubismo"
+                | "wormhole"
+                | "lasers"
         ) {
             return Err(AppError::Message(
                 "appearance.visualizerScene is not a known visualizer scene".into(),

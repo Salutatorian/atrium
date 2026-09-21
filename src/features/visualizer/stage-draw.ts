@@ -56,9 +56,45 @@ function fade(ctx: CanvasRenderingContext2D, width: number, height: number, a: n
   ctx.fillRect(0, 0, width, height);
 }
 
-export function drawStage(args: StageDrawArgs): void {
-  const { scene } = args;
+type CanvasSceneId =
+  | "ambience"
+  | "tunnel"
+  | "plasma"
+  | "starfield"
+  | "particles"
+  | "vortex"
+  | "ribbons";
+
+function canvasSceneFor(scene: StageSceneId): CanvasSceneId {
   switch (scene) {
+    case "ambience":
+    case "tunnel":
+    case "plasma":
+    case "starfield":
+    case "particles":
+    case "vortex":
+    case "ribbons":
+      return scene;
+    case "eggs":
+      return "plasma";
+    case "hurricane":
+    case "cubismo":
+      return "vortex";
+    case "hyperspace":
+    case "wormhole":
+      return "starfield";
+    case "lasers":
+      return "particles";
+    default: {
+      const _exhaustive: never = scene;
+      return _exhaustive;
+    }
+  }
+}
+
+export function drawStage(args: StageDrawArgs): void {
+  const canvasScene = canvasSceneFor(args.scene);
+  switch (canvasScene) {
     case "ambience":
       drawAmbience(args);
       break;
@@ -81,7 +117,7 @@ export function drawStage(args: StageDrawArgs): void {
       drawRibbons(args);
       break;
     default: {
-      const _exhaustive: never = scene;
+      const _exhaustive: never = canvasScene;
       return _exhaustive;
     }
   }

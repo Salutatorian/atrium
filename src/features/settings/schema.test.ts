@@ -73,6 +73,17 @@ describe("settings schema", () => {
     expect(settings.appearance.visualizerGrain).toBe(false);
   });
 
+  it("accepts milkdrop visualizer scenes", () => {
+    const settings = validateSettings({
+      ...defaultSettings,
+      appearance: {
+        ...defaultSettings.appearance,
+        visualizerScene: "lasers",
+      },
+    });
+    expect(settings.appearance.visualizerScene).toBe("lasers");
+  });
+
   it("rejects invalid shell mode", () => {
     const result = safeParseSettings({
       ...defaultSettings,

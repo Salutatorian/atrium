@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   pickMusicFiles,
   pickMusicFolder,
-  removeIndexedFolder,
+  removeLibraryFolder,
   startLibraryScan,
 } from "./api";
 import { ArtworkImage } from "./ArtworkImage";
@@ -105,12 +105,6 @@ export function FoldersPage({ embedded = false }: EmbeddedProps) {
   return (
     <section className="library-page" aria-label="Folders">
       {embedded ? null : <LibraryToolbar />}
-      <p className="panel__intro">
-        Each folder lists only the songs sitting in it — songs in a subfolder
-        stay on that subfolder.{" "}
-        <strong>Remove from library</strong> clears Atrium&apos;s index for this
-        folder; your files stay on disk. Liked songs stay in Liked.
-      </p>
 
       {error ? <p className="settings-note">{error}</p> : null}
 
@@ -138,11 +132,11 @@ export function FoldersPage({ embedded = false }: EmbeddedProps) {
                 disabled={!isTauriRuntime() || busyId === folder.id}
                 onClick={() => {
                   const ok = window.confirm(
-                    `Remove “${folder.name}” from your library?\n\nYour music files stay on disk. Only songs in this folder are cleared — songs in other folders are left alone. Liked songs from this folder stay in Liked.`,
+                    `Remove “${folder.name}” from your library?\n\nYour music files stay on disk. Everything inside this added folder is cleared from Atrium. Liked songs stay in Liked.`,
                   );
                   if (!ok) return;
                   setBusyId(folder.id);
-                  void removeIndexedFolder(folder.id)
+                  void removeLibraryFolder(folder.id)
                     .then(async () => {
                       await refreshAll();
                       setVersion((v) => v + 1);

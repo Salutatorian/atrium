@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   APP_DESCRIPTION,
@@ -8,7 +8,7 @@ import {
   DONATE_AMOUNTS,
 } from "../../app/brand";
 import { BrandLogo } from "../../app/shell/BrandLogo";
-import { IconClose } from "../../components/icons";
+import { IconClose, IconHelp } from "../../components/icons";
 import { Tooltip } from "../../components/Tooltip";
 import { useShellStore } from "../../stores/shell-store";
 import { isTauriRuntime } from "../../services/tauri";
@@ -67,6 +67,37 @@ async function openExternal(url: string): Promise<void> {
     return;
   }
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function SettingHint({ text }: { text: string }) {
+  return (
+    <Tooltip label={text} side="top">
+      <button
+        type="button"
+        className="settings-hint"
+        aria-label="About this setting"
+        onClick={(event) => event.preventDefault()}
+        onMouseDown={(event) => event.preventDefault()}
+      >
+        <IconHelp />
+      </button>
+    </Tooltip>
+  );
+}
+
+function FieldLabel({
+  children,
+  hint,
+}: {
+  children: ReactNode;
+  hint?: string;
+}) {
+  return (
+    <span className="settings-field__label">
+      {children}
+      {hint ? <SettingHint text={hint} /> : null}
+    </span>
+  );
 }
 
 export function SettingsWindow() {
@@ -179,10 +210,6 @@ function GeneralSettings() {
   return (
     <div className="settings-stack">
       <h2 className="settings-section-title">General</h2>
-      <p className="settings-note">
-        Desktop behavior for Windows, macOS, and Linux. Atrium stays offline-first
-        and light enough for older machines.
-      </p>
       <label className="settings-field settings-field--checkbox">
         <span>Remember last song and position</span>
         <input
@@ -193,13 +220,10 @@ function GeneralSettings() {
           }}
         />
       </label>
-      <p className="settings-note">
-        After quit or force-close, the next launch opens the same queue paused
-        where you left off. Missing files — or a folder that is gone — are
-        skipped.
-      </p>
       <label className="settings-field settings-field--checkbox">
-        <span>Close to system tray</span>
+        <FieldLabel hint="The X button hides Atrium in the notification area. Right-click the tray icon to quit.">
+          Close to system tray
+        </FieldLabel>
         <input
           type="checkbox"
           checked={settings.general.closeToTray}
@@ -208,11 +232,6 @@ function GeneralSettings() {
           }}
         />
       </label>
-      <p className="settings-note">
-        When on (default), the X button hides Atrium to the notification area
-        instead of quitting. Right-click the tray icon → Quit Atrium to fully
-        exit. Turn this off to quit on X.
-      </p>
       <label className="settings-field settings-field--checkbox">
         <span>Launch at login</span>
         <input
@@ -223,10 +242,6 @@ function GeneralSettings() {
           }}
         />
       </label>
-      <p className="settings-note">
-        Start Atrium when you sign in to this computer. Works on Windows, macOS,
-        and Linux. Off by default.
-      </p>
       <label className="settings-field settings-field--checkbox">
         <span>Check for updates</span>
         <input
@@ -237,12 +252,10 @@ function GeneralSettings() {
           }}
         />
       </label>
-      <p className="settings-note">
-        Look for a newer Atrium on GitHub when the app starts. Uses a short
-        network check only for updates.
-      </p>
       <label className="settings-field settings-field--checkbox">
-        <span>Install updates automatically</span>
+        <FieldLabel hint="Downloads and installs on launch. The window may close briefly. Off shows Update / Cancel instead.">
+          Install updates automatically
+        </FieldLabel>
         <input
           type="checkbox"
           checked={settings.general.autoInstallUpdates}
@@ -252,12 +265,6 @@ function GeneralSettings() {
           }}
         />
       </label>
-      <p className="settings-note">
-        When on, Atrium downloads and installs on launch (the window may close
-        briefly while updating — same pattern as many desktop apps). Turn off to
-        get a bottom-right Update / Cancel notice instead. After updating,
-        you&apos;ll see what changed.
-      </p>
       <div className="settings-field">
         <button
           type="button"
@@ -279,9 +286,7 @@ function LibrarySettings() {
     <div className="settings-stack">
       <h2 className="settings-section-title">Library</h2>
       <p className="settings-note">
-        Add folders from Library → Add music, or drop them onto the window.
-        Atrium only indexes those locations — it never copies songs onto your
-        computer. Rescan refreshes metadata for folders you already added.
+        Add folders from Library, or drop them on the window.
       </p>
     </div>
   );
@@ -295,7 +300,9 @@ function PlaybackSettings() {
     <div className="settings-stack">
       <h2 className="settings-section-title">Playback</h2>
       <label className="settings-field">
-        <span>ReplayGain</span>
+        <FieldLabel hint="Matches volume across songs (track) or keeps album dynamics (album).">
+          ReplayGain
+        </FieldLabel>
         <select
           value={settings.playback.replayGainMode}
           onChange={(event) => {
@@ -311,7 +318,9 @@ function PlaybackSettings() {
         </select>
       </label>
       <label className="settings-field">
-        <span>Preamp ({settings.playback.preampDb.toFixed(1)} dB)</span>
+        <FieldLabel hint="Boost or cut overall level. Lower it if boosting clips.">
+          Preamp ({settings.playback.preampDb.toFixed(1)} dB)
+        </FieldLabel>
         <input
           type="range"
           min={-12}
@@ -391,10 +400,6 @@ function AudioSettings() {
   return (
     <div className="settings-stack settings-stack--eq">
       <h2 className="settings-section-title">Equalizer</h2>
-      <p className="settings-note">
-        10-band peaking EQ with 20 presets. Drag any band to go custom — tweak
-        Q for wider or narrower cuts/boosts.
-      </p>
 
       <label className="settings-field settings-field--checkbox">
         <span>Enable EQ</span>
@@ -429,13 +434,11 @@ function AudioSettings() {
           <option value="custom">Custom</option>
         </select>
       </label>
-      <p className="settings-note">
-        {getEqPreset(settings.playback.eqPresetId)?.description ??
-          "Your hand-tuned curve"}
-      </p>
 
       <label className="settings-field">
-        <span>Preamp ({settings.playback.preampDb.toFixed(1)} dB)</span>
+        <FieldLabel hint="Boost or cut overall level. Lower it if boosting clips.">
+          Preamp ({settings.playback.preampDb.toFixed(1)} dB)
+        </FieldLabel>
         <input
           type="range"
           min={-12}
@@ -453,9 +456,9 @@ function AudioSettings() {
       </label>
 
       <label className="settings-field">
-        <span>
-          Bandwidth / Q ({settings.playback.eqQ.toFixed(2)}) — lower = wider
-        </span>
+        <FieldLabel hint="Lower values affect a wider frequency range. Double-click a band to zero it.">
+          Bandwidth / Q ({settings.playback.eqQ.toFixed(2)})
+        </FieldLabel>
         <input
           type="range"
           min={0.3}
@@ -533,11 +536,6 @@ function AudioSettings() {
           Zero preamp + Q
         </button>
       </div>
-
-      <p className="settings-note">
-        Tip: double-click a band to zero it. Preamp helps avoid clipping when
-        boosting.
-      </p>
     </div>
   );
 }
@@ -554,7 +552,9 @@ function AppearanceSettings({
     <div className="settings-stack">
       <h2 className="settings-section-title">Appearance</h2>
       <label className="settings-field">
-        <span>Density</span>
+        <FieldLabel hint="Original is the cover list. Compact is one-line rows with no artwork. Spacious adds room.">
+          Density
+        </FieldLabel>
         <select
           value={settings.appearance.density}
           onChange={(event) => {
@@ -564,11 +564,9 @@ function AppearanceSettings({
             });
           }}
         >
-          <option value="comfortable">
-            Original — covers & two-line rows (default)
-          </option>
-          <option value="compact">Compact — no covers, one-line rows</option>
-          <option value="spacious">Spacious — roomy rows & larger hits</option>
+          <option value="comfortable">Original</option>
+          <option value="compact">Compact</option>
+          <option value="spacious">Spacious</option>
         </select>
       </label>
       <label className="settings-field">
@@ -587,7 +585,9 @@ function AppearanceSettings({
         </select>
       </label>
       <label className="settings-field settings-field--checkbox">
-        <span>Show soundbars</span>
+        <FieldLabel hint="Tiny beat-reactive bars in the player. Click them to open Visualizer Mode.">
+          Show soundbars
+        </FieldLabel>
         <input
           type="checkbox"
           checked={settings.appearance.visualizerEnabled}
@@ -617,12 +617,17 @@ function AppearanceSettings({
           )}
         </select>
       </label>
-      <p className="settings-note">
-        Tiny beat-reactive bars in the player only. Click them to open a
-        separate full-window Visualizer Mode — not a blown-up soundbar.
-      </p>
       <label className="settings-field">
-        <span>Visualizer scene</span>
+        <FieldLabel
+          hint={
+            STAGE_SCENES.find(
+              (s) => s.id === settings.appearance.visualizerScene,
+            )?.description ||
+            "Background look for full-window Visualizer Mode."
+          }
+        >
+          Visualizer scene
+        </FieldLabel>
         <select
           value={settings.appearance.visualizerScene}
           onChange={(event) => {
@@ -637,26 +642,6 @@ function AppearanceSettings({
               {scene.name}
             </option>
           ))}
-        </select>
-      </label>
-      <p className="settings-note">
-        {STAGE_SCENES.find((s) => s.id === settings.appearance.visualizerScene)
-          ?.description ?? ""}
-      </p>
-      <label className="settings-field">
-        <span>Track overlay</span>
-        <select
-          value={settings.appearance.visualizerOverlay}
-          onChange={(event) => {
-            void patchAppearance({
-              visualizerOverlay: event.target
-                .value as AppSettings["appearance"]["visualizerOverlay"],
-            });
-          }}
-        >
-          <option value="track-change">On track change</option>
-          <option value="always">Always</option>
-          <option value="never">Never</option>
         </select>
       </label>
       <label className="settings-field settings-field--checkbox">
@@ -700,7 +685,9 @@ function AppearanceSettings({
         />
       </label>
       <label className="settings-field">
-        <span>Window mode</span>
+        <FieldLabel hint="Visualizer fills the window. Mini is a compact player.">
+          Window mode
+        </FieldLabel>
         <select
           value={settings.appearance.shellMode}
           onChange={(event) => {
@@ -745,12 +732,10 @@ function AppearanceSettings({
       </label>
 
       <h2 className="settings-section-title">Fonts</h2>
-      <p className="settings-note">
-        Changes the typeface across the whole app. Google fonts download the
-        first time you pick them (needs network once).
-      </p>
       <label className="settings-field">
-        <span>UI font</span>
+        <FieldLabel hint="Google fonts download the first time you pick them.">
+          UI font
+        </FieldLabel>
         <select
           value={settings.appearance.uiFontId}
           onChange={(event) => {
@@ -814,12 +799,7 @@ function AppearanceSettings({
 
       <div className="settings-theme-studio">
         <div className="settings-theme-studio__header">
-          <div>
-            <h3>Theme Studio</h3>
-            <p className="settings-note">
-              100+ presets, import/export, and atmosphere controls.
-            </p>
-          </div>
+          <h3>Theme Studio</h3>
           <button
             type="button"
             className="button-primary"
@@ -880,7 +860,9 @@ function LyricsSettings() {
         </select>
       </label>
       <label className="settings-field">
-        <span>Global offset ({settings.lyrics.globalOffsetMs}ms)</span>
+        <FieldLabel hint="Shifts all synced lyrics earlier or later.">
+          Global offset ({settings.lyrics.globalOffsetMs}ms)
+        </FieldLabel>
         <input
           type="range"
           min={-5000}
@@ -902,11 +884,6 @@ function ShortcutsSettings() {
   return (
     <div className="settings-stack settings-stack--shortcuts">
       <h2 className="settings-section-title">Shortcuts</h2>
-      <p className="settings-note">
-        Works while Atrium is focused. Letter shortcuts use physical keys, so
-        they stay on the same positions across keyboard layouts. On Mac, Ctrl
-        chords use ⌘.
-      </p>
       {groups.map((group) => (
         <div key={group.id} className="settings-shortcuts-group">
           <h3 className="settings-shortcuts-group__title">{group.title}</h3>
@@ -953,7 +930,9 @@ function PrivacySettings() {
         />
       </label>
       <label className="settings-field settings-field--checkbox">
-        <span>Allow lyrics providers (LRCLIB)</span>
+        <FieldLabel hint="Also needs Allow network access.">
+          Allow lyrics providers (LRCLIB)
+        </FieldLabel>
         <input
           type="checkbox"
           checked={settings.privacy.allowLyricsProviders}
@@ -962,9 +941,6 @@ function PrivacySettings() {
           }}
         />
       </label>
-      <p className="settings-note">
-        Network lyrics stay off until both privacy toggles are enabled.
-      </p>
     </div>
   );
 }
@@ -973,10 +949,6 @@ function AdvancedSettings() {
   return (
     <div className="settings-stack">
       <h2 className="settings-section-title">Advanced</h2>
-      <p className="settings-note">
-        AI lyric drafts stay local-only when introduced. Network libraries remain
-        opt-in behind the privacy gate. Atrium stays offline-first.
-      </p>
     </div>
   );
 }
@@ -992,10 +964,6 @@ function AboutSettings() {
       />
       <p className="settings-note">
         {APP_NAME} — {APP_DESCRIPTION}
-      </p>
-      <p className="settings-note">
-        Source, releases, and discussion live on GitHub. Use Report an issue to
-        type a bug or idea — it opens on GitHub so the maintainer gets it there.
       </p>
       <div className="settings-about-actions">
         <button
@@ -1022,18 +990,14 @@ function AboutSettings() {
       </p>
 
       <h2 className="settings-section-title">What’s new</h2>
-      <p className="settings-note">
-        Bugs, fixes, and new features for this version and earlier releases.
-      </p>
       <div className="settings-changelog">
         <UpdatesShowcase forceShow />
       </div>
 
-      <h2 className="settings-section-title">Support {APP_NAME}</h2>
-      <p className="settings-note">
-        Optional tips help keep development going. Opens Stripe Checkout in your
-        browser — card details stay with Stripe, never this app.
-      </p>
+      <h2 className="settings-section-title">
+        Support {APP_NAME}
+        <SettingHint text="Opens Stripe Checkout in your browser. Card details stay with Stripe." />
+      </h2>
       <div className="settings-about-actions" role="group" aria-label="Donate">
         {DONATE_AMOUNTS.map((amount) => (
           <Tooltip key={amount.id} label={amount.tooltip} side="top">

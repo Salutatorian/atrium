@@ -101,6 +101,12 @@ export const appSettingsSchema = z.object({
         "particles",
         "vortex",
         "ribbons",
+        "hurricane",
+        "hyperspace",
+        "eggs",
+        "cubismo",
+        "wormhole",
+        "lasers",
       ])
       .default("ambience"),
     /** Track metadata over the full-window visualizer. */

@@ -1,4 +1,4 @@
-/** Full-window Visualizer Mode scenes — not the player soundbars. */
+/** Full-window Visualizer Mode scenes — MilkDrop presets (Winamp / WMP). */
 
 export type StageSceneId =
   | "ambience"
@@ -7,12 +7,20 @@ export type StageSceneId =
   | "starfield"
   | "particles"
   | "vortex"
-  | "ribbons";
+  | "ribbons"
+  | "hurricane"
+  | "hyperspace"
+  | "eggs"
+  | "cubismo"
+  | "wormhole"
+  | "lasers";
 
 export type StageScene = {
   id: StageSceneId;
   name: string;
   description: string;
+  /** Exact key in the MilkDrop 1 Butterchurn pack. */
+  milkdrop: string;
 };
 
 export const DEFAULT_STAGE_SCENE: StageSceneId = "ambience";
@@ -20,38 +28,81 @@ export const DEFAULT_STAGE_SCENE: StageSceneId = "ambience";
 export const STAGE_SCENES: StageScene[] = [
   {
     id: "ambience",
-    name: "Ambience",
-    description: "Drifting color clouds — the classic sit-back visualizer",
+    name: "Planet",
+    description: "Geiss classic — drifting world, the old Windows visualizer feel",
+    milkdrop: "Geiss - Planet 1",
   },
   {
     id: "tunnel",
     name: "Tunnel",
-    description: "Flying into a pulsing ring tunnel",
+    description: "Flying into a twisting Escher tunnel",
+    milkdrop: "Aderrasi - Contortion (Escher\u2032s Tunnel Mix)",
   },
   {
     id: "plasma",
-    name: "Plasma",
-    description: "Slow-moving color field",
+    name: "Feedback",
+    description: "Slow painterly feedback field",
+    milkdrop: "Geiss - Feedback 2",
   },
   {
     id: "starfield",
     name: "Starfield",
-    description: "Stars rush toward you with the beat",
+    description: "Ripples a million miles from earth",
+    milkdrop: "Krash & Rovastar - A Million Miles from Earth (Ripple Mix)",
   },
   {
     id: "particles",
-    name: "Particles",
-    description: "Sparks that burst on bass hits",
+    name: "Sparks",
+    description: "Beat-reactive spark trails",
+    milkdrop: "Eo.S. - spark C_Phat_Jester_Mix_v2",
   },
   {
     id: "vortex",
-    name: "Vortex",
-    description: "A spinning spiral of light",
+    name: "Spiral",
+    description: "Hypnotic spiral movement",
+    milkdrop: "Krash + Illusion - Spiral Movement",
   },
   {
     id: "ribbons",
-    name: "Ribbons",
-    description: "Wide flowing sheets of color",
+    name: "Mosaic",
+    description: "Flowing mosaic waves",
+    milkdrop: "Rovastar + Fvese - Mosaic Waves",
+  },
+  {
+    id: "hurricane",
+    name: "Hurricane",
+    description: "Geiss storm — spinning weather",
+    milkdrop: "Geiss - Hurricane",
+  },
+  {
+    id: "hyperspace",
+    name: "Hyperspace",
+    description: "Rovastar jump to light speed",
+    milkdrop: "Rovastar - Hyperspace",
+  },
+  {
+    id: "eggs",
+    name: "Eggs",
+    description: "Geiss organic cells",
+    milkdrop: "Geiss - Eggs",
+  },
+  {
+    id: "cubismo",
+    name: "Cubes",
+    description: "Geiss cubism — tumbling blocks",
+    milkdrop: "Geiss - El Cubismo",
+  },
+  {
+    id: "wormhole",
+    name: "Wormhole",
+    description: "Through a long-haul warp tunnel",
+    milkdrop: "Rovastar - A Million Miles From Earth (Wormhole Mix)",
+  },
+  {
+    id: "lasers",
+    name: "Lasers",
+    description: "Show lasers cutting the dark",
+    milkdrop: "GreatWho - Lasershow",
   },
 ];
 

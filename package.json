@@ -1,7 +1,7 @@
 {
   "name": "atrium",
   "private": true,
-  "version": "1.7.4",
+  "version": "1.7.5",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
@@ -32,6 +32,8 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-updater": "^2.10.1",
+    "butterchurn": "^2.6.7",
+    "butterchurn-presets": "^2.4.7",
     "clsx": "^2.1.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

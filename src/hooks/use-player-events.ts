@@ -63,6 +63,7 @@ export function usePlayerEvents() {
         bass: frame.bass ?? 0,
         beat: frame.beat ?? 0,
         energy: frame.energy ?? 0,
+        waveform: frame.waveform,
       });
     }).then((fn) => {
       if (cancelled) fn();

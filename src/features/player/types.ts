@@ -31,6 +31,7 @@ export type SpectrumEvent = {
   bass: number;
   beat: number;
   energy: number;
+  waveform?: number[];
 };
 
 export type PositionEvent = {

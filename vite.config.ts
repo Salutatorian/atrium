@@ -7,6 +7,12 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   clearScreen: false,
+  optimizeDeps: {
+    include: [
+      "butterchurn",
+      "butterchurn-presets/lib/butterchurnPresetsMD1.min.js",
+    ],
+  },
   server: {
     port: 1420,
     strictPort: true,

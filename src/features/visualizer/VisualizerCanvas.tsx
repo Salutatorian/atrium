@@ -5,8 +5,6 @@ import { cn } from "../../utils/cn";
 import { getVisualizerPreset } from "./catalog";
 import { drawVisualizer } from "./draw";
 import { getSpectrumFrame, type SpectrumFrame } from "./spectrum-bus";
-import { getStageScene } from "./stage-catalog";
-import { createStageState, drawStage } from "./stage-draw";
 
 export type VisualizerCanvasVariant = "player" | "stage";
 
@@ -54,16 +52,12 @@ export function VisualizerCanvas({
     energy: 0,
   });
   const hasFrozenRef = useRef(false);
-  const stageStateRef = useRef(createStageState());
   const soundbarsOn = useSettingsStore((s) => s.settings.appearance.visualizerEnabled);
   const styleId = useSettingsStore((s) => s.settings.appearance.visualizerStyle);
-  const sceneId = useSettingsStore((s) => s.settings.appearance.visualizerScene);
   const playerPreset = getVisualizerPreset(
     styleId === "off" ? "classic-blocks" : styleId,
   );
-  const stageScene = getStageScene(sceneId).id;
-
-  const enabled = variant === "stage" || soundbarsOn;
+  const enabled = soundbarsOn;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -75,15 +69,11 @@ export function VisualizerCanvas({
     let raf = 0;
     let alive = true;
     let lastDraw = 0;
-    const dprCap = variant === "stage" ? 1.5 : 2;
-    if (variant === "stage") {
-      stageStateRef.current = createStageState();
-    }
 
     const resize = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.max(1, parent.clientWidth);
       const h = Math.max(1, parent.clientHeight);
       canvas.width = Math.max(1, Math.floor(w * dpr));
@@ -91,10 +81,6 @@ export function VisualizerCanvas({
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (variant === "stage") {
-        ctx.fillStyle = "#05070a";
-        ctx.fillRect(0, 0, w, h);
-      }
     };
 
     resize();
@@ -105,7 +91,7 @@ export function VisualizerCanvas({
       if (!alive) return;
       if (document.visibilityState === "hidden") return;
       raf = requestAnimationFrame(tick);
-      const minFrame = reducedMotion ? 48 : variant === "stage" ? 22 : 16;
+      const minFrame = reducedMotion ? 48 : 16;
       if (now - lastDraw < minFrame) return;
       lastDraw = now;
 
@@ -127,21 +113,6 @@ export function VisualizerCanvas({
       } else {
         hasFrozenRef.current = false;
         frame = live;
-      }
-
-      if (variant === "stage") {
-        drawStage({
-          ctx,
-          width,
-          height,
-          scene: stageScene,
-          frame,
-          accent: readAccent(),
-          now,
-          reducedMotion,
-          state: stageStateRef.current,
-        });
-        return;
       }
 
       if (peaksRef.current.length < playerPreset.barCount) {
@@ -178,7 +149,7 @@ export function VisualizerCanvas({
       document.removeEventListener("visibilitychange", onVisibility);
       ro.disconnect();
     };
-  }, [playerPreset, stageScene, reducedMotion, enabled, variant]);
+  }, [playerPreset, reducedMotion, enabled]);
 
   if (!enabled && variant === "player") {
     return (
@@ -189,15 +160,10 @@ export function VisualizerCanvas({
   if (!enabled) return null;
 
   return (
-    <div className={cn(variant === "player" ? "player-visualizer" : "visualizer-stage__canvas-wrap", className)}>
+    <div className={cn("player-visualizer", className)}>
       <canvas
         ref={canvasRef}
-        className={cn(
-          variant === "player"
-            ? "player-visualizer__canvas"
-            : "visualizer-stage__canvas",
-          canvasClassName,
-        )}
+        className={cn("player-visualizer__canvas", canvasClassName)}
       />
     </div>
   );

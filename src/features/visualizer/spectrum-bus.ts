@@ -3,6 +3,8 @@ export type SpectrumFrame = {
   bass: number;
   beat: number;
   energy: number;
+  /** 0–255 PCM window for MilkDrop (optional). */
+  waveform?: number[];
 };
 
 const EMPTY: SpectrumFrame = {

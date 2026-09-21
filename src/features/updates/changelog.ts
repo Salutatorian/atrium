@@ -40,6 +40,32 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-09-v1-7-5",
+    version: "1.7.5",
+    title: "Atrium 1.7.5",
+    date: "2026-09-21",
+    summary:
+      "Visualizer Mode now runs classic MilkDrop scenes, Folders stay as the folder you added, and Settings is quieter.",
+    changes: [
+      {
+        kind: "add",
+        text: "Visualizer scenes are real MilkDrop presets — Planet, Hurricane, Hyperspace, and more",
+      },
+      {
+        kind: "fix",
+        text: "Folders lists the library folder you added, with nested albums rolled into that count",
+      },
+      {
+        kind: "remove",
+        text: "Visualizer no longer flashes the track title and artist over the scene",
+      },
+      {
+        kind: "improve",
+        text: "Settings is roomier, with less copy and a hover “?” only on the confusing options",
+      },
+    ],
+  },
+  {
     id: "2026-09-v1-7-4",
     version: "1.7.4",
     title: "Atrium 1.7.4",

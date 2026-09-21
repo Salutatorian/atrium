@@ -107,12 +107,6 @@ export function ThemesStudio() {
 
   return (
     <section className="panel themes-panel" aria-label="Themes">
-      <p className="panel__intro">
-        Browse 100+ original Atrium presets (not third-party GPL packs), tune
-        atmosphere, and import or export theme files ({THEME_FILE_EXTENSION}).
-        Use search to jump to a mood.
-      </p>
-
       <div className="themes-toolbar">
         <label className="settings-field themes-search">
           <span className="sr-only">Search themes</span>

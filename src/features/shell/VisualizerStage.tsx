@@ -1,17 +1,11 @@
-import { ArtworkImage } from "../library/ArtworkImage";
-import { VisualizerCanvas } from "../visualizer/VisualizerCanvas";
-import { usePlayerStore } from "../../stores/player-store";
+import { MilkdropCanvas } from "../visualizer/MilkdropCanvas";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { cn } from "../../utils/cn";
 import { setOsFullscreen, toggleOsFullscreen } from "./window-fullscreen";
 
 export function VisualizerStage() {
-  const current = usePlayerStore((s) => s.current);
   const patchAppearance = useSettingsStore((s) => s.patchAppearance);
-  const overlayMode = useSettingsStore(
-    (s) => s.settings.appearance.visualizerOverlay,
-  );
   const showVignette = useSettingsStore(
     (s) => s.settings.appearance.visualizerVignette,
   );
@@ -19,7 +13,6 @@ export function VisualizerStage() {
     (s) => s.settings.appearance.visualizerGrain,
   );
   const reducedMotion = useReducedMotion();
-  const trackKey = `${current?.trackId ?? 0}:${current?.title ?? ""}`;
 
   const exit = () => {
     void setOsFullscreen(false);
@@ -35,34 +28,7 @@ export function VisualizerStage() {
       )}
       aria-label="Visualizer"
     >
-      <VisualizerCanvas variant="stage" reducedMotion={reducedMotion} />
-
-      {overlayMode !== "never" ? (
-        <div
-          key={overlayMode === "always" ? "overlay-always" : trackKey}
-          className={cn(
-            "visualizer-stage__overlay",
-            overlayMode === "track-change" &&
-              !reducedMotion &&
-              "visualizer-stage__overlay--flash",
-          )}
-          aria-live="polite"
-        >
-          <ArtworkImage
-            className="visualizer-stage__overlay-art"
-            cacheKey={current?.artworkCacheKey}
-            alt=""
-          />
-          <div className="visualizer-stage__overlay-meta">
-            <p className="visualizer-stage__overlay-title">
-              {current?.title || "Nothing playing"}
-            </p>
-            <p className="visualizer-stage__overlay-artist">
-              {current?.artist || "Choose a song"}
-            </p>
-          </div>
-        </div>
-      ) : null}
+      <MilkdropCanvas reducedMotion={reducedMotion} />
 
       <div className="visualizer-stage__chrome">
         <p

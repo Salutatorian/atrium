@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 pub const BAND_COUNT: usize = 48;
 const RING_SIZE: usize = 2048;
 const ANALYZE_SIZE: usize = 1024;
+const WAVE_SIZE: usize = 576;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +22,9 @@ pub struct SpectrumEvent {
     pub beat: f32,
     /// Broadband RMS energy 0..=1
     pub energy: f32,
+    /// 8-bit PCM window for MilkDrop (0–255, length WAVE_SIZE)
+    #[serde(default)]
+    pub waveform: Vec<u8>,
 }
 
 pub struct SpectrumTap {
@@ -114,6 +118,14 @@ impl SpectrumTap {
             }
         }
 
+        let mut waveform = vec![128u8; WAVE_SIZE];
+        let step = ANALYZE_SIZE as f32 / WAVE_SIZE as f32;
+        for i in 0..WAVE_SIZE {
+            let src = ((i as f32) * step) as usize;
+            let sample = time[src.min(ANALYZE_SIZE - 1)].clamp(-1.0, 1.0);
+            waveform[i] = ((sample + 1.0) * 127.5).round() as u8;
+        }
+
         // Hann window + RMS
         let mut energy_sum = 0.0_f32;
         for (i, sample) in time.iter_mut().enumerate() {
@@ -187,6 +199,7 @@ impl SpectrumTap {
             bass,
             beat,
             energy,
+            waveform,
         }
     }
 }
@@ -239,5 +252,13 @@ mod tests {
         let frame = tap.compute(48_000);
         assert!(frame.energy > 0.1);
         assert!(frame.bass > 0.05 || frame.bands.iter().take(12).any(|&b| b > 0.1));
+    }
+
+    #[test]
+    fn silence_waveform_is_midline() {
+        let tap = SpectrumTap::new();
+        let frame = tap.compute(48_000);
+        assert_eq!(frame.waveform.len(), WAVE_SIZE);
+        assert!(frame.waveform.iter().all(|&s| s.abs_diff(128) <= 1));
     }
 }
