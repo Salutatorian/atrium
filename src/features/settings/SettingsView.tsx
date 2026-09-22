@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   APP_DESCRIPTION,
@@ -10,7 +10,7 @@ import {
 import { BrandLogo } from "../../app/shell/BrandLogo";
 import { IconClose, IconHelp } from "../../components/icons";
 import { Tooltip } from "../../components/Tooltip";
-import { useShellStore } from "../../stores/shell-store";
+import { useShellStore, type SettingsCategory } from "../../stores/shell-store";
 import { isTauriRuntime } from "../../services/tauri";
 import {
   APP_FONTS,
@@ -33,19 +33,6 @@ import { checkForAppUpdate } from "../updates/update-service";
 import { useSettingsStore } from "../../stores/settings-store";
 import type { AppSettings } from "./schema";
 import { cn } from "../../utils/cn";
-
-type SettingsCategory =
-  | "general"
-  | "library"
-  | "playback"
-  | "audio"
-  | "appearance"
-  | "themes"
-  | "lyrics"
-  | "shortcuts"
-  | "privacy"
-  | "advanced"
-  | "about";
 
 const categories: { id: SettingsCategory; label: string }[] = [
   { id: "general", label: "General" },
@@ -162,7 +149,8 @@ export function SettingsWindow() {
 }
 
 export function SettingsView() {
-  const [category, setCategory] = useState<SettingsCategory>("general");
+  const category = useShellStore((s) => s.settingsCategory);
+  const setCategory = useShellStore((s) => s.setSettingsCategory);
 
   return (
     <section className="settings-view settings-view--window" aria-label="Settings">

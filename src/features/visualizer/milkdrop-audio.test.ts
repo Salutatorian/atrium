@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import pack from "butterchurn-presets/lib/butterchurnPresetsMD1.min.js";
 import { spectrumToTimeBytes, MILKDROP_WAVE_SIZE } from "./milkdrop-audio";
+import { loadMilkdropPresets } from "./milkdrop-presets";
 import { STAGE_SCENES } from "./stage-catalog";
 
 describe("milkdrop scenes", () => {
-  it("maps every scene to a real MilkDrop preset", () => {
-    const presets = pack.getPresets();
+  it("maps every scene to a real MilkDrop 2 preset", async () => {
+    const presets = await loadMilkdropPresets();
     for (const scene of STAGE_SCENES) {
       expect(presets[scene.milkdrop], scene.milkdrop).toBeTruthy();
     }

@@ -71,6 +71,9 @@ pub fn run() {
             }
 
             tray::setup_tray(app.handle())?;
+            crate::platform::media::setup(app.handle())?;
+            #[cfg(windows)]
+            crate::platform::windows::setup(app.handle())?;
 
             Ok(())
         })

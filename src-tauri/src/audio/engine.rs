@@ -412,6 +412,7 @@ fn run_player_worker(
                         *state.status.lock() = PlayerStatus::Playing;
                     }
                     persist.save(&state, true);
+                    publish_os_media(&app, &state);
                 }
                 PlayerCommand::Pause => {
                     // Gate output immediately — don't drain ~1s of soft buffer.
@@ -419,6 +420,7 @@ fn run_player_worker(
                     playing = false;
                     *state.status.lock() = PlayerStatus::Paused;
                     persist.save(&state, true);
+                    publish_os_media(&app, &state);
                 }
                 PlayerCommand::Stop => {
                     playing = false;
@@ -430,6 +432,7 @@ fn run_player_worker(
                     decode_origin_ms = 0;
                     decoded_frames = 0;
                     persist.save(&state, true);
+                    publish_os_media(&app, &state);
                 }
                 PlayerCommand::Next => {
                     let advanced = state.queue.lock().next_index(true).is_some();
@@ -451,6 +454,7 @@ fn run_player_worker(
                         decoder = None;
                         buffer.clear();
                         *state.status.lock() = PlayerStatus::Stopped;
+                        publish_os_media(&app, &state);
                     }
                     persist.save(&state, true);
                 }
@@ -808,6 +812,15 @@ fn emit_track_changed(app: &AppHandle, state: &SharedPlayerState) {
             queue_index: queue.index(),
         },
     );
+    drop(queue);
+    publish_os_media(app, state);
+}
+
+fn publish_os_media(app: &AppHandle, state: &SharedPlayerState) {
+    let status = *state.status.lock();
+    let current = state.current.lock().clone();
+    let position_ms = state.position_ms.load(Ordering::Relaxed);
+    crate::platform::media::publish(app, status, current.as_ref(), position_ms);
 }
 
 fn emit_queue_changed(app: &AppHandle, state: &SharedPlayerState) {

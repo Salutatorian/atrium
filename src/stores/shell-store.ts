@@ -13,6 +13,19 @@ export type DrawerTab = "queue" | "lyrics" | "info";
 
 export type LibraryTab = "songs" | "albums" | "artists" | "folders";
 
+export type SettingsCategory =
+  | "general"
+  | "library"
+  | "playback"
+  | "audio"
+  | "appearance"
+  | "themes"
+  | "lyrics"
+  | "shortcuts"
+  | "privacy"
+  | "advanced"
+  | "about";
+
 type ShellState = {
   activeNav: NavId;
   libraryTab: LibraryTab;
@@ -22,6 +35,7 @@ type ShellState = {
   inspectorTab: DrawerTab;
   nowPlayingOpen: boolean;
   settingsOpen: boolean;
+  settingsCategory: SettingsCategory;
   setActiveNav: (id: NavId) => void;
   setLibraryTab: (tab: LibraryTab) => void;
   toggleSidebar: () => void;
@@ -36,6 +50,7 @@ type ShellState = {
   openSettings: () => void;
   closeSettings: () => void;
   toggleSettings: () => void;
+  setSettingsCategory: (category: SettingsCategory) => void;
 };
 
 export const useShellStore = create<ShellState>((set, get) => ({
@@ -47,6 +62,7 @@ export const useShellStore = create<ShellState>((set, get) => ({
   inspectorTab: "queue",
   nowPlayingOpen: false,
   settingsOpen: false,
+  settingsCategory: "general",
   setActiveNav: (activeNav) => {
     if (activeNav === "settings") {
       set({ settingsOpen: true, nowPlayingOpen: false });
@@ -83,4 +99,5 @@ export const useShellStore = create<ShellState>((set, get) => ({
       settingsOpen: !state.settingsOpen,
       nowPlayingOpen: state.settingsOpen ? state.nowPlayingOpen : false,
     })),
+  setSettingsCategory: (settingsCategory) => set({ settingsCategory }),
 }));

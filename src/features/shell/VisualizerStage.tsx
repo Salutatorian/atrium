@@ -1,4 +1,6 @@
 import { MilkdropCanvas } from "../visualizer/MilkdropCanvas";
+import { getStageScene, STAGE_SCENES } from "../visualizer/stage-catalog";
+import type { AppSettings } from "../settings/schema";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { cn } from "../../utils/cn";
@@ -6,6 +8,7 @@ import { setOsFullscreen, toggleOsFullscreen } from "./window-fullscreen";
 
 export function VisualizerStage() {
   const patchAppearance = useSettingsStore((s) => s.patchAppearance);
+  const sceneId = useSettingsStore((s) => s.settings.appearance.visualizerScene);
   const showVignette = useSettingsStore(
     (s) => s.settings.appearance.visualizerVignette,
   );
@@ -31,6 +34,25 @@ export function VisualizerStage() {
       <MilkdropCanvas reducedMotion={reducedMotion} />
 
       <div className="visualizer-stage__chrome">
+        <label className="visualizer-stage__scene-wrap">
+          <span className="sr-only">Visualizer scene</span>
+          <select
+            className="visualizer-stage__scene"
+            value={getStageScene(sceneId).id}
+            onChange={(event) => {
+              void patchAppearance({
+                visualizerScene: event.target
+                  .value as AppSettings["appearance"]["visualizerScene"],
+              });
+            }}
+          >
+            {STAGE_SCENES.map((scene) => (
+              <option key={scene.id} value={scene.id}>
+                {scene.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <p
           className={cn(
             "visualizer-stage__hint",

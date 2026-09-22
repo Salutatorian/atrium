@@ -10,7 +10,8 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       "butterchurn",
-      "butterchurn-presets/lib/butterchurnPresetsMD1.min.js",
+      "butterchurn-presets/lib/butterchurnPresets.min.js",
+      "butterchurn-presets/lib/butterchurnPresetsExtra.min.js",
     ],
   },
   server: {

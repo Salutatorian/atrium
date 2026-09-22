@@ -40,6 +40,32 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-09-v1-7-6",
+    version: "1.7.6",
+    title: "Atrium 1.7.6",
+    date: "2026-09-22",
+    summary:
+      "Visualizer scenes are MilkDrop 2 shaders, you can switch them on the stage, and Windows taskbar hover has previous, pause, and next.",
+    changes: [
+      {
+        kind: "improve",
+        text: "Visualizer scenes are MilkDrop 2 shader presets — Cauldron, Tokamak, Maxawow, and more",
+      },
+      {
+        kind: "add",
+        text: "Pick a visualizer scene from the fullscreen view instead of going back to Settings",
+      },
+      {
+        kind: "add",
+        text: "Hovering Atrium on the Windows taskbar shows previous, pause, and next",
+      },
+      {
+        kind: "improve",
+        text: "Settings reopens on the last category you were in",
+      },
+    ],
+  },
+  {
     id: "2026-09-v1-7-5",
     version: "1.7.5",
     title: "Atrium 1.7.5",

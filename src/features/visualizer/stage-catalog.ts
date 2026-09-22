@@ -1,4 +1,4 @@
-/** Full-window Visualizer Mode scenes — MilkDrop presets (Winamp / WMP). */
+/** Full-window Visualizer Mode — MilkDrop 2 shader presets (Geiss / Winamp). */
 
 export type StageSceneId =
   | "ambience"
@@ -19,7 +19,7 @@ export type StageScene = {
   id: StageSceneId;
   name: string;
   description: string;
-  /** Exact key in the MilkDrop 1 Butterchurn pack. */
+  /** Exact key in the Butterchurn MilkDrop 2 packs. */
   milkdrop: string;
 };
 
@@ -28,81 +28,81 @@ export const DEFAULT_STAGE_SCENE: StageSceneId = "ambience";
 export const STAGE_SCENES: StageScene[] = [
   {
     id: "ambience",
-    name: "Planet",
-    description: "Geiss classic — drifting world, the old Windows visualizer feel",
-    milkdrop: "Geiss - Planet 1",
+    name: "Cauldron",
+    description: "Geiss painterly wash — the MilkDrop 2 look",
+    milkdrop: "Geiss - Cauldron - painterly (saturation remix)",
   },
   {
     id: "tunnel",
     name: "Tunnel",
-    description: "Flying into a twisting Escher tunnel",
-    milkdrop: "Aderrasi - Contortion (Escher\u2032s Tunnel Mix)",
+    description: "Geiss layered tunnel",
+    milkdrop: "Geiss - 3 layers (Tunnel Mix)",
   },
   {
     id: "plasma",
-    name: "Feedback",
-    description: "Slow painterly feedback field",
-    milkdrop: "Geiss - Feedback 2",
+    name: "Maxawow",
+    description: "Flexi / Martin / Geiss shader classic",
+    milkdrop: "Flexi, martin + geiss - dedicated to the sherwin maxawow",
   },
   {
     id: "starfield",
-    name: "Starfield",
-    description: "Ripples a million miles from earth",
-    milkdrop: "Krash & Rovastar - A Million Miles from Earth (Ripple Mix)",
+    name: "Space",
+    description: "Rovastar + Geiss snapshot of space",
+    milkdrop: "Rovastar + Geiss - Snapshot Of Space (LSB mix)",
   },
   {
     id: "particles",
-    name: "Sparks",
-    description: "Beat-reactive spark trails",
-    milkdrop: "Eo.S. - spark C_Phat_Jester_Mix_v2",
+    name: "Brain Zoom",
+    description: "Geiss close-up zoom",
+    milkdrop: "Geiss - Brain Zoom 4",
   },
   {
     id: "vortex",
-    name: "Spiral",
-    description: "Hypnotic spiral movement",
-    milkdrop: "Krash + Illusion - Spiral Movement",
+    name: "Tokamak",
+    description: "Geiss tokamak — MilkDrop 2 signature",
+    milkdrop: "Geiss - Tokamak Plus 2",
   },
   {
     id: "ribbons",
-    name: "Mosaic",
-    description: "Flowing mosaic waves",
-    milkdrop: "Rovastar + Fvese - Mosaic Waves",
+    name: "Mosaics",
+    description: "Geiss myriad mosaics",
+    milkdrop: "Geiss - Myriad Mosaics",
   },
   {
     id: "hurricane",
     name: "Hurricane",
-    description: "Geiss storm — spinning weather",
-    milkdrop: "Geiss - Hurricane",
+    description: "Rovastar + Geiss hurricane nightmare",
+    milkdrop: "Rovastar + Geiss - Hurricane Nightmare",
   },
   {
     id: "hyperspace",
-    name: "Hyperspace",
-    description: "Rovastar jump to light speed",
-    milkdrop: "Rovastar - Hyperspace",
+    name: "Castle",
+    description: "Martin — castle in the air",
+    milkdrop: "martin - castle in the air",
   },
   {
     id: "eggs",
-    name: "Eggs",
-    description: "Geiss organic cells",
-    milkdrop: "Geiss - Eggs",
+    name: "Diffusion",
+    description: "Geiss reaction-diffusion",
+    milkdrop: "Geiss - Reaction Diffusion 3",
   },
   {
     id: "cubismo",
-    name: "Cubes",
-    description: "Geiss cubism — tumbling blocks",
-    milkdrop: "Geiss - El Cubismo",
+    name: "Life",
+    description: "Geiss Game of Life",
+    milkdrop: "Geiss - Game of Life 3",
   },
   {
     id: "wormhole",
     name: "Wormhole",
-    description: "Through a long-haul warp tunnel",
-    milkdrop: "Rovastar - A Million Miles From Earth (Wormhole Mix)",
+    description: "Unchained + Rovastar wormhole pillars",
+    milkdrop: "Unchained & Rovastar - Wormhole Pillars (Hall of Shadows mix)",
   },
   {
     id: "lasers",
-    name: "Lasers",
-    description: "Show lasers cutting the dark",
-    milkdrop: "GreatWho - Lasershow",
+    name: "Liquid Fire",
+    description: "Cope — neverending red liquid fire",
+    milkdrop: "Cope - The Neverending Explosion of Red Liquid Fire",
   },
 ];
 

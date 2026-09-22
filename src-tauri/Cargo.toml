@@ -1,6 +1,6 @@
 [package]
 name = "atrium"
-version = "1.7.5"
+version = "1.7.6"
 description = "Atrium — offline-first personal music environment"
 authors = ["Salutatorian"]
 license = "Apache-2.0"
@@ -38,6 +38,16 @@ ureq = { version = "2.12.1", default-features = true, features = ["json"] }
 tauri-plugin-autostart = "2.5.1"
 tauri-plugin-updater = "2.10.1"
 tauri-plugin-process = "2.3.1"
+souvlaki = "0.8"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Com",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
 
 [dev-dependencies]
 tempfile = "3.27.0"

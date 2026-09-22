@@ -10,7 +10,7 @@ function chromeIsBusy(): boolean {
   if (
     active instanceof HTMLElement &&
     active.closest(".player-bar, .context-drawer, .visualizer-stage__chrome") &&
-    active.matches("button, input, [role='menuitem'], [role='tab']")
+    active.matches("button, input, select, [role='menuitem'], [role='tab']")
   ) {
     return true;
   }

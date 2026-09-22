@@ -4,6 +4,7 @@ import { usePlayerStore } from "../../stores/player-store";
 import { useSettingsStore } from "../../stores/settings-store";
 import { cn } from "../../utils/cn";
 import { spectrumToTimeBytes } from "./milkdrop-audio";
+import { loadMilkdropPresets } from "./milkdrop-presets";
 import { getSpectrumFrame, type SpectrumFrame } from "./spectrum-bus";
 import { getStageScene } from "./stage-catalog";
 import { createStageState, drawStage } from "./stage-draw";
@@ -16,11 +17,6 @@ type MilkdropCanvasProps = {
 type ButterchurnModule = {
   default?: { createVisualizer?: CreateVisualizer };
   createVisualizer?: CreateVisualizer;
-};
-
-type PresetPack = {
-  default?: { getPresets?: () => Record<string, unknown> };
-  getPresets?: () => Record<string, unknown>;
 };
 
 type CreateVisualizer = (
@@ -49,14 +45,6 @@ function createVisualizer(mod: ButterchurnModule, canvas: HTMLCanvasElement, wid
   const create = mod.createVisualizer ?? mod.default?.createVisualizer;
   if (!create) throw new Error("butterchurn createVisualizer missing");
   return create(null, canvas, { width, height });
-}
-
-function loadPack(mod: PresetPack): Record<string, unknown> {
-  const root = mod.getPresets ? mod : mod.default;
-  if (root && typeof root.getPresets === "function") {
-    return root.getPresets();
-  }
-  return {};
 }
 
 export function MilkdropCanvas({ reducedMotion, className }: MilkdropCanvasProps) {
@@ -185,13 +173,12 @@ export function MilkdropCanvas({ reducedMotion, className }: MilkdropCanvasProps
       canvas.height = height;
       applyCssSize(cssW, cssH);
       try {
-        const [butterMod, packMod] = await Promise.all([
+        const [butterMod, presets] = await Promise.all([
           import("butterchurn") as Promise<ButterchurnModule>,
-          import("butterchurn-presets/lib/butterchurnPresetsMD1.min.js") as Promise<PresetPack>,
+          loadMilkdropPresets(),
         ]);
         if (!alive) return;
         visualizer = createVisualizer(butterMod, canvas, width, height);
-        const presets = loadPack(packMod);
         const preset = presets[milkdropKey];
         if (!preset) throw new Error(`missing preset ${milkdropKey}`);
         await visualizer.loadPreset(preset, 0);
