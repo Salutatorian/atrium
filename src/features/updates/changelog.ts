@@ -40,6 +40,28 @@ export const UPDATE_KIND_LABEL: Record<UpdateKind, string> = {
 /** Newest first. */
 export const UPDATE_RELEASES: UpdateRelease[] = [
   {
+    id: "2026-09-v1-7-7",
+    version: "1.7.7",
+    title: "Atrium 1.7.7",
+    date: "2026-09-27",
+    summary:
+      "Right-click a Library song to queue, like, or save it to a playlist — and playlists can have a name and a square photo.",
+    changes: [
+      {
+        kind: "add",
+        text: "Right-click any Library song to add it to the queue, like it, or save it to a playlist",
+      },
+      {
+        kind: "add",
+        text: "Create a playlist from that menu with a custom name and optional 1:1 square photo",
+      },
+      {
+        kind: "improve",
+        text: "Playlists can be renamed and given a square cover from the Playlists page",
+      },
+    ],
+  },
+  {
     id: "2026-09-v1-7-6",
     version: "1.7.6",
     title: "Atrium 1.7.6",

@@ -2,6 +2,7 @@ export type PlaylistSummary = {
   id: string;
   name: string;
   description?: string | null;
+  coverPath?: string | null;
   trackCount: number;
   updatedAt: string;
 };

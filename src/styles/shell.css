@@ -2445,6 +2445,25 @@ input[type="checkbox"]:disabled {
   background: var(--color-surface-hover);
 }
 
+.track-copy-menu__sep {
+  height: 1px;
+  margin: 0.25rem 0.4rem;
+  background: var(--color-border);
+}
+
+.track-copy-menu__empty {
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  color: var(--color-muted-text);
+  font-size: 0.85rem;
+}
+
+.track-copy-menu__scroll {
+  display: grid;
+  max-height: 12rem;
+  overflow: auto;
+}
+
 .track-row:hover {
   background: transparent;
 }
@@ -3353,6 +3372,22 @@ input[type="checkbox"]:disabled {
   flex-shrink: 0;
 }
 
+.playlist-landing__cover--photo {
+  object-fit: cover;
+  aspect-ratio: 1;
+  padding: 0;
+}
+
+.playlist-landing__cover-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 0;
+  border-radius: 18px;
+}
+
 .artist-list--refined .artist-row {
   display: flex;
   gap: 0.85rem;
@@ -3555,6 +3590,7 @@ input[type="checkbox"]:disabled {
 
 .home-tile__cover {
   width: 100%;
+  height: auto;
   aspect-ratio: 1;
   border-radius: var(--radius-artwork);
   font-size: 1.6rem;

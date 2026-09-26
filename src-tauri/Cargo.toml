@@ -1,6 +1,6 @@
 [package]
 name = "atrium"
-version = "1.7.6"
+version = "1.7.7"
 description = "Atrium — offline-first personal music environment"
 authors = ["Salutatorian"]
 license = "Apache-2.0"

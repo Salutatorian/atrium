@@ -115,6 +115,8 @@ pub fn run() {
             commands::playlists_list,
             commands::playlists_create,
             commands::playlists_rename,
+            commands::playlists_set_cover,
+            commands::playlists_clear_cover,
             commands::playlists_delete,
             commands::playlists_list_tracks,
             commands::playlists_add_tracks,

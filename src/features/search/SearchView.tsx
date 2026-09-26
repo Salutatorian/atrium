@@ -4,6 +4,7 @@ import { fetchTracks } from "../library/api";
 import type { TrackSummary } from "../library/types";
 import { playTracks } from "../player/api";
 import { listPlaylists } from "../playlists/api";
+import { PlaylistCover } from "../playlists/PlaylistCover";
 import type { PlaylistSummary } from "../playlists/types";
 import { useLibraryStore } from "../../stores/library-store";
 import { usePlayerStore } from "../../stores/player-store";
@@ -323,9 +324,12 @@ export function SearchView() {
                     onClick={() => activate({ kind: "playlist", playlist })}
                     onMouseEnter={() => setActiveIndex(index)}
                   >
-                    <span className="search-result__avatar" aria-hidden>
-                      {(playlist.name.trim().charAt(0) || "P").toUpperCase()}
-                    </span>
+                    <PlaylistCover
+                      name={playlist.name}
+                      coverPath={playlist.coverPath}
+                      updatedAt={playlist.updatedAt}
+                      className="search-result__avatar"
+                    />
                     <span>
                       <strong>{playlist.name}</strong>
                       <span className="muted">{playlist.trackCount} songs</span>

@@ -3,6 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { playTracks } from "../player/api";
 import { formatDuration } from "./api";
 import { ArtworkImage } from "./ArtworkImage";
+import { TrackContextMenu } from "./TrackContextMenu";
 import type { TrackSummary } from "./types";
 import { useLibraryStore } from "../../stores/library-store";
 import { usePlayerStore } from "../../stores/player-store";
@@ -112,13 +113,23 @@ export function TrackList() {
     function close() {
       setCopyMenu(null);
     }
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest(".track-copy-menu, .modal-scrim")
+      ) {
+        return;
+      }
+      close();
+    }
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") close();
     }
-    window.addEventListener("pointerdown", close);
+    window.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keydown", onKey);
     };
   }, [copyMenu]);
@@ -176,7 +187,7 @@ export function TrackList() {
               role="button"
               tabIndex={0}
               aria-current={active ? "true" : undefined}
-              aria-label={`Play ${trackTitle(track)}. Right-click to copy. Hold Alt to select text.`}
+              aria-label={`Play ${trackTitle(track)}. Right-click for queue, like, and playlists.`}
               style={{
                 position: "absolute",
                 top: 0,
@@ -260,43 +271,12 @@ export function TrackList() {
       {loading ? <p className="list-status">Loading…</p> : null}
 
       {copyMenu ? (
-        <div
-          className="track-copy-menu"
-          style={{ left: copyMenu.x, top: copyMenu.y }}
-          role="menu"
-          onPointerDown={(event) => event.stopPropagation()}
-        >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              void copyText(trackTitle(copyMenu.track));
-              setCopyMenu(null);
-            }}
-          >
-            Copy title
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              void copyText(trackCopyLine(copyMenu.track));
-              setCopyMenu(null);
-            }}
-          >
-            Copy title – artist
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              void copyText(copyMenu.track.path);
-              setCopyMenu(null);
-            }}
-          >
-            Copy file path
-          </button>
-        </div>
+        <TrackContextMenu
+          track={copyMenu.track}
+          x={copyMenu.x}
+          y={copyMenu.y}
+          onClose={() => setCopyMenu(null)}
+        />
       ) : null}
     </div>
   );

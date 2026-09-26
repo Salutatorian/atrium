@@ -1,4 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { isTauriRuntime } from "../../services/tauri";
 import type { Page, TrackSummary } from "../library/types";
 import type {
@@ -6,6 +7,26 @@ import type {
   SmartPlaylistRules,
   SmartPlaylistSummary,
 } from "./types";
+
+export async function pickPlaylistCover(): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  const selected = await open({
+    multiple: false,
+    title: "Choose a square photo",
+    filters: [
+      {
+        name: "Images",
+        extensions: ["png", "jpg", "jpeg", "webp"],
+      },
+    ],
+  });
+  return typeof selected === "string" ? selected : null;
+}
+
+export function playlistCoverSrc(coverPath?: string | null): string | null {
+  if (!coverPath || !isTauriRuntime()) return null;
+  return convertFileSrc(coverPath);
+}
 
 export async function listPlaylists(): Promise<PlaylistSummary[]> {
   if (!isTauriRuntime()) return [];
@@ -20,6 +41,21 @@ export async function createPlaylist(
     name,
     description: description ?? null,
   });
+}
+
+export async function renamePlaylist(id: string, name: string): Promise<void> {
+  await invoke("playlists_rename", { id, name });
+}
+
+export async function setPlaylistCover(
+  id: string,
+  path: string,
+): Promise<PlaylistSummary> {
+  return invoke<PlaylistSummary>("playlists_set_cover", { id, path });
+}
+
+export async function clearPlaylistCover(id: string): Promise<PlaylistSummary> {
+  return invoke<PlaylistSummary>("playlists_clear_cover", { id });
 }
 
 export async function deletePlaylist(id: string): Promise<void> {

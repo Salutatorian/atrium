@@ -13,6 +13,7 @@ pub struct PlaylistSummary {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
+    pub cover_path: Option<String>,
     pub track_count: i64,
     pub updated_at: String,
 }
@@ -49,7 +50,7 @@ pub struct SmartRule {
 pub fn list_playlists(db: &Database) -> Result<Vec<PlaylistSummary>, AppError> {
     let conn = db.conn();
     let mut stmt = conn.prepare(
-        "SELECT p.id, p.name, p.description, p.updated_at,
+        "SELECT p.id, p.name, p.description, p.cover_path, p.updated_at,
                 (SELECT COUNT(*) FROM playlist_items i WHERE i.playlist_id = p.id) as track_count
          FROM playlists p
          ORDER BY lower(p.name)",
@@ -60,8 +61,9 @@ pub fn list_playlists(db: &Database) -> Result<Vec<PlaylistSummary>, AppError> {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 description: row.get(2)?,
-                updated_at: row.get(3)?,
-                track_count: row.get(4)?,
+                cover_path: row.get(3)?,
+                updated_at: row.get(4)?,
+                track_count: row.get(5)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -87,6 +89,7 @@ pub fn create_playlist(
         id,
         name: name.to_string(),
         description: description.map(|s| s.trim().to_string()).filter(|s| !s.is_empty()),
+        cover_path: None,
         track_count: 0,
         updated_at: "now".into(),
     })
@@ -105,6 +108,55 @@ pub fn rename_playlist(db: &Database, id: &str, name: &str) -> Result<(), AppErr
         return Err(AppError::Message("Playlist not found".into()));
     }
     Ok(())
+}
+
+pub fn playlist_by_id(db: &Database, id: &str) -> Result<PlaylistSummary, AppError> {
+    let conn = db.conn();
+    conn.query_row(
+        "SELECT p.id, p.name, p.description, p.cover_path, p.updated_at,
+                (SELECT COUNT(*) FROM playlist_items i WHERE i.playlist_id = p.id) as track_count
+         FROM playlists p WHERE p.id = ?1",
+        params![id],
+        |row| {
+            Ok(PlaylistSummary {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                description: row.get(2)?,
+                cover_path: row.get(3)?,
+                updated_at: row.get(4)?,
+                track_count: row.get(5)?,
+            })
+        },
+    )
+    .optional()?
+    .ok_or_else(|| AppError::Message("Playlist not found".into()))
+}
+
+pub fn set_playlist_cover(
+    db: &Database,
+    data_dir: &Path,
+    id: &str,
+    source: &Path,
+) -> Result<PlaylistSummary, AppError> {
+    let _ = playlist_by_id(db, id)?;
+    let dest = crate::library::artwork::persist_square_cover(data_dir, id, source)?;
+    let cover = dest.to_string_lossy().to_string();
+    db.conn().execute(
+        "UPDATE playlists SET cover_path = ?1, updated_at = datetime('now') WHERE id = ?2",
+        params![cover, id],
+    )?;
+    playlist_by_id(db, id)
+}
+
+pub fn clear_playlist_cover(db: &Database, id: &str) -> Result<PlaylistSummary, AppError> {
+    let changed = db.conn().execute(
+        "UPDATE playlists SET cover_path = NULL, updated_at = datetime('now') WHERE id = ?1",
+        params![id],
+    )?;
+    if changed == 0 {
+        return Err(AppError::Message("Playlist not found".into()));
+    }
+    playlist_by_id(db, id)
 }
 
 pub fn delete_playlist(db: &Database, id: &str) -> Result<(), AppError> {

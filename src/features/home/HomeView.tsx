@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { pickMusicFolder, startLibraryScan } from "../library/api";
+import { PlaylistCover } from "../playlists/PlaylistCover";
 import { ArtworkImage } from "../library/ArtworkImage";
 import { formatDuration } from "../library/api";
 import {
@@ -306,9 +307,12 @@ export function HomeView() {
                       className="home-tile home-tile--playlist"
                       onClick={() => setActiveNav("playlists")}
                     >
-                      <span className="home-tile__cover" aria-hidden>
-                        {(playlist.name.trim().charAt(0) || "P").toUpperCase()}
-                      </span>
+                      <PlaylistCover
+                        name={playlist.name}
+                        coverPath={playlist.coverPath}
+                        updatedAt={playlist.updatedAt}
+                        className="home-tile__cover"
+                      />
                       <strong>{playlist.name}</strong>
                       <span>{playlist.trackCount} songs</span>
                     </button>

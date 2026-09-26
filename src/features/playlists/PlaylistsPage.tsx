@@ -5,14 +5,19 @@ import type { TrackSummary } from "../library/types";
 import { usePlayerStore } from "../../stores/player-store";
 import {
   addTracksToPlaylist,
+  clearPlaylistCover,
   createPlaylist,
   deletePlaylist,
   listPlaylistTracks,
   listPlaylists,
   listSmartPlaylists,
+  pickPlaylistCover,
+  renamePlaylist,
   removeTrackFromPlaylist,
+  setPlaylistCover,
 } from "./api";
 import type { PlaylistSummary, SmartPlaylistSummary } from "./types";
+import { PlaylistCover } from "./PlaylistCover";
 import { SmartPlaylistsPage } from "./SmartPlaylistsPage";
 
 type LandingItem =
@@ -26,8 +31,10 @@ export function PlaylistsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tracks, setTracks] = useState<TrackSummary[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [name, setName] = useState("");
+  const [coverPick, setCoverPick] = useState<string | null>(null);
   const [addQuery, setAddQuery] = useState("");
   const [addResults, setAddResults] = useState<TrackSummary[]>([]);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -38,6 +45,12 @@ export function PlaylistsPage() {
 
   function reloadPlaylists() {
     setListVersion((v) => v + 1);
+  }
+
+  async function applyCover(id: string, path: string | null) {
+    if (!path) return;
+    await setPlaylistCover(id, path);
+    reloadPlaylists();
   }
 
   async function openPlaylist(id: string) {
@@ -123,7 +136,11 @@ export function PlaylistsPage() {
               <button
                 type="button"
                 className="button-primary"
-                onClick={() => setCreateOpen(true)}
+                onClick={() => {
+                  setName("");
+                  setCoverPick(null);
+                  setCreateOpen(true);
+                }}
               >
                 New playlist
               </button>
@@ -147,7 +164,7 @@ export function PlaylistsPage() {
                         className="playlist-landing__item"
                         onClick={() => setMode("smart-studio")}
                       >
-                        <span className="playlist-landing__cover" aria-hidden>
+                      <span className="playlist-landing__cover" aria-hidden>
                           {(item.playlist.name.trim().charAt(0) || "S").toUpperCase()}
                         </span>
                         <span className="playlist-landing__meta">
@@ -170,9 +187,11 @@ export function PlaylistsPage() {
                         void openPlaylist(item.playlist.id);
                       }}
                     >
-                      <span className="playlist-landing__cover" aria-hidden>
-                        {(item.playlist.name.trim().charAt(0) || "P").toUpperCase()}
-                      </span>
+                      <PlaylistCover
+                        name={item.playlist.name}
+                        coverPath={item.playlist.coverPath}
+                        updatedAt={item.playlist.updatedAt}
+                      />
                       <span className="playlist-landing__meta">
                         <strong>{item.playlist.name}</strong>
                         <span className="muted">
@@ -200,9 +219,24 @@ export function PlaylistsPage() {
             ← All playlists
           </button>
           <header className="playlist-detail-view__hero">
-            <span className="playlist-landing__cover playlist-landing__cover--lg" aria-hidden>
-              {(selected?.name.trim().charAt(0) || "P").toUpperCase()}
-            </span>
+            <button
+              type="button"
+              className="playlist-landing__cover-button"
+              aria-label="Change playlist photo"
+              onClick={() => {
+                if (!selectedId) return;
+                void pickPlaylistCover().then((path) => {
+                  if (path) void applyCover(selectedId, path);
+                });
+              }}
+            >
+              <PlaylistCover
+                name={selected?.name || "Playlist"}
+                coverPath={selected?.coverPath}
+                updatedAt={selected?.updatedAt}
+                className="playlist-landing__cover--lg"
+              />
+            </button>
             <div>
               <h1 className="view-title">{selected?.name || "Playlist"}</h1>
               <p className="muted">
@@ -240,6 +274,43 @@ export function PlaylistsPage() {
                   </button>
                   {moreOpen ? (
                     <div className="player-more-menu" role="menu">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setName(selected?.name || "");
+                          setRenameOpen(true);
+                          setMoreOpen(false);
+                        }}
+                      >
+                        Rename
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          if (!selectedId) return;
+                          setMoreOpen(false);
+                          void pickPlaylistCover().then((path) => {
+                            if (path) void applyCover(selectedId, path);
+                          });
+                        }}
+                      >
+                        Change photo
+                      </button>
+                      {selected?.coverPath ? (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            if (!selectedId) return;
+                            setMoreOpen(false);
+                            void clearPlaylistCover(selectedId).then(() => reloadPlaylists());
+                          }}
+                        >
+                          Remove photo
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         role="menuitem"
@@ -321,7 +392,11 @@ export function PlaylistsPage() {
               event.preventDefault();
               void createPlaylist(name)
                 .then(async (created) => {
+                  if (coverPick) {
+                    await setPlaylistCover(created.id, coverPick);
+                  }
                   setName("");
+                  setCoverPick(null);
                   setCreateOpen(false);
                   reloadPlaylists();
                   await openPlaylist(created.id);
@@ -342,16 +417,73 @@ export function PlaylistsPage() {
                 autoFocus
               />
             </label>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => {
+                void pickPlaylistCover().then((path) => {
+                  if (path) setCoverPick(path);
+                });
+              }}
+            >
+              {coverPick ? "Photo chosen" : "Add a square photo"}
+            </button>
             <div className="modal-card__actions">
               <button
                 type="button"
                 className="text-button"
-                onClick={() => setCreateOpen(false)}
+                onClick={() => {
+                  setCreateOpen(false);
+                  setCoverPick(null);
+                }}
               >
                 Cancel
               </button>
               <button type="submit" className="button-primary">
                 Create
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {renameOpen && selectedId ? (
+        <div className="modal-scrim" role="presentation">
+          <form
+            className="modal-card"
+            aria-label="Rename playlist"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void renamePlaylist(selectedId, name)
+                .then(() => {
+                  setRenameOpen(false);
+                  reloadPlaylists();
+                })
+                .catch((err: unknown) => {
+                  setError(err instanceof Error ? err.message : String(err));
+                });
+            }}
+          >
+            <h2>Rename playlist</h2>
+            <label className="settings-field">
+              <span>Name</span>
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+                autoFocus
+              />
+            </label>
+            <div className="modal-card__actions">
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setRenameOpen(false)}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="button-primary">
+                Save
               </button>
             </div>
           </form>

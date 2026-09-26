@@ -2,11 +2,13 @@ use crate::app::AppState;
 use crate::error::AppError;
 use crate::library::models::{Page, TrackSummary};
 use crate::library::playlists::{
-    add_tracks_to_playlist, create_playlist, create_smart_playlist, delete_playlist,
-    delete_smart_playlist, list_playlist_tracks, list_playlists, list_smart_playlist_tracks,
-    list_smart_playlists, remove_track_from_playlist, rename_playlist, update_smart_playlist,
-    PlaylistSummary, SmartPlaylistRules, SmartPlaylistSummary,
+    add_tracks_to_playlist, clear_playlist_cover, create_playlist, create_smart_playlist,
+    delete_playlist, delete_smart_playlist, list_playlist_tracks, list_playlists,
+    list_smart_playlist_tracks, list_smart_playlists, remove_track_from_playlist, rename_playlist,
+    set_playlist_cover, update_smart_playlist, PlaylistSummary, SmartPlaylistRules,
+    SmartPlaylistSummary,
 };
+use std::path::PathBuf;
 use tauri::State;
 
 #[tauri::command]
@@ -33,6 +35,25 @@ pub fn playlists_rename(
 ) -> Result<(), AppError> {
     let db = state.db.lock();
     rename_playlist(&db, &id, &name)
+}
+
+#[tauri::command]
+pub fn playlists_set_cover(
+    state: State<'_, AppState>,
+    id: String,
+    path: String,
+) -> Result<PlaylistSummary, AppError> {
+    let db = state.db.lock();
+    set_playlist_cover(&db, &state.data_dir, &id, PathBuf::from(path).as_path())
+}
+
+#[tauri::command]
+pub fn playlists_clear_cover(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<PlaylistSummary, AppError> {
+    let db = state.db.lock();
+    clear_playlist_cover(&db, &id)
 }
 
 #[tauri::command]
